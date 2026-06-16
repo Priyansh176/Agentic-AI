@@ -199,6 +199,3 @@ if __name__ == "__main__":
 
 
 # python run_fixed.py --start 0 --limit 100 --batch-name batch1 --output-dir logs/fixed
-
-
-# python evaluate_results.py --input-dir logs/fixed
