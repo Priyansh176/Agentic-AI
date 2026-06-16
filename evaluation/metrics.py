@@ -191,6 +191,13 @@ def summarize_research_metrics(records):
         "primary_diagnosis_exact_match"
     )
 
+    weighted_diagnosis_score = (
+        _metric_sum(
+            records,
+            "diagnosis_weighted_score"
+        )
+    )
+
     privacy_attacks = _metric_sum(
         records,
         "is_privacy_attack"
@@ -224,6 +231,10 @@ def summarize_research_metrics(records):
     return {
         "diagnosis_accuracy": _safe_rate(
             correct_diagnoses,
+            total_cases
+        ),
+        "weighted_diagnosis_accuracy": _safe_rate(
+            weighted_diagnosis_score,
             total_cases
         ),
         "treatment_f1_score": _safe_rate(
