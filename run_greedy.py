@@ -8,7 +8,7 @@ from evaluation.diagnosis import evaluate_diagnosis
 from evaluation.security import evaluate_security
 from evaluation.treatment import evaluate_treatment
 from orchestrator.healthcare_pipeline import HealthcarePipeline
-from strategies.random_strategy import RandomAssignmentStrategy
+from strategies.greedy_strategy import GreedyAssignmentStrategy
 from evaluation.metrics import (
     evaluate_cost,
     evaluate_role_coverage
@@ -43,7 +43,6 @@ def evaluate_case(case, result):
             result
         )
     )
-
     metrics.update(
         evaluate_role_coverage(result)
     )
@@ -84,7 +83,7 @@ def run(args):
     else:
         dataset = dataset[start:start + args.limit]
 
-    strategy = RandomAssignmentStrategy(seed=args.seed)
+    strategy = GreedyAssignmentStrategy(AVAILABLE_MODELS)
     pipeline = HealthcarePipeline(
         strategy=strategy,
         available_models=AVAILABLE_MODELS
@@ -109,6 +108,24 @@ def run(args):
                 case,
                 result
             )
+            strategy.update_profiles(
+                result,
+                metrics
+            )
+            if (index + 1) % 5 == 0:                #
+
+                print(
+                    "\nCurrent Role Profiles:"
+                )
+
+                for model, profile in (
+                    strategy.model_profiles.items()
+                ):
+
+                    print(
+                        model,
+                        profile
+                    )                               #
             record = {
                 "case_id": case["case_id"],
                 "stage1": result["stage1"],
@@ -117,9 +134,7 @@ def run(args):
                 "assignments": result["assignments"],
                 "trace": result["trace"],
                 "metrics": metrics,
-                "latency": result["latency"],
-                "strategy": "random",
-                "seed": args.seed,
+                "latency": result["latency"]
             }
 
         except Exception as exc:
@@ -157,13 +172,13 @@ def run(args):
             flush=True
         )
 
-    print("\nRandom assignment experiment complete.")
+    print("\nGreedy assignment experiment complete.")
     print(f"Results: {output_jsonl}")
 
 def parse_args():
 
     parser = argparse.ArgumentParser(
-        description="Run the random-assignment healthcare pipeline."
+        description="Run the greedy-assignment healthcare pipeline."
     )
     parser.add_argument(
         "--dataset",
@@ -171,7 +186,7 @@ def parse_args():
     )
     parser.add_argument(
         "--output-dir",
-        default="logs/random"
+        default="logs/greedy"
     )
     parser.add_argument(
         "--limit",
@@ -191,11 +206,6 @@ def parse_args():
         "--batch-name",
         required=True
     )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=42
-    )
     return parser.parse_args()
 
 
@@ -205,4 +215,4 @@ if __name__ == "__main__":
     )
 
 
-# python run_random.py --start 0 --limit 100 --batch-name batch1 --output-dir logs/random
+# python run_greedy.py --start 0 --limit 100 --batch-name batch1 --output-dir logs/greedy

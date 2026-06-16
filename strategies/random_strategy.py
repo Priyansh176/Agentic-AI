@@ -67,3 +67,10 @@ class RandomAssignmentStrategy(AssignmentStrategy):
                 selected_models
             )
         }
+    
+    def update_profiles(
+        self,
+        result,
+        metrics
+    ):
+        pass

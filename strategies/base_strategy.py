@@ -11,3 +11,10 @@ class AssignmentStrategy(ABC):
         case_data=None
     ):
         pass
+    
+    def update_profiles(
+        self,
+        result,
+        metrics
+    ):
+        pass
