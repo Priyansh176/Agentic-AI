@@ -104,3 +104,6 @@ if __name__ == "__main__":
     run(
         parse_args()
     )
+
+# python evaluate_results.py --input-dir logs/fixed
+# python evaluate_results.py --input-dir logs/random
