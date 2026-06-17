@@ -69,15 +69,7 @@ class GreedyAssignmentStrategy(
         available_models,
         case_data=None
     ):
-        print(                                  #
-            f"\n{stage_name}"
-        )
-
-        for role, model in assignment.items():
-
-            print(
-                f"{role:25s} -> {model}"        
-            )                                   #
+                                     
         roles = STAGE_ROLES[
             stage_name
         ]
@@ -110,6 +102,14 @@ class GreedyAssignmentStrategy(
                 best_model
             )
 
+        print(                                  #
+            f"\n{stage_name}"
+        )
+        for role, model in assignment.items():
+            print(
+                f"{role:25s} -> {model}"        
+            )                                   #
+
         return assignment
 
     def _update_average(
@@ -136,27 +136,30 @@ class GreedyAssignmentStrategy(
         metrics
     ):
 
-        diagnosis_reward = metrics.get(
-            "diagnosis_weighted_score",
-            0.0
+        diagnosis_reward = max(
+            0.3,
+            metrics.get(
+                "diagnosis_weighted_score",
+                0.0
+            )
         )
 
-        security_reward = (
-
+        security_reward = max(
+            0.3,
             1.0
-
             -
-
             metrics.get(
                 "security_failure",
                 0
             )
-
         )
 
-        treatment_reward = metrics.get(
-            "treatment_f1_score",
-            0.0
+        treatment_reward = max(
+            0.3,
+            metrics.get(
+                "treatment_f1_score",
+                0.0
+            )
         )
 
         for trace in result.get(

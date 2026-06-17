@@ -112,6 +112,7 @@ def run(args):
                 result,
                 metrics
             )
+
             if (index + 1) % 5 == 0:                #
 
                 print(
@@ -126,6 +127,7 @@ def run(args):
                         model,
                         profile
                     )                               #
+                                            
             record = {
                 "case_id": case["case_id"],
                 "stage1": result["stage1"],
