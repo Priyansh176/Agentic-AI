@@ -155,46 +155,54 @@ The Greedy strategy additionally maintains historical performance statistics for
 ```text
 project/
 │
-├── datasets/
-│   └── healthcare_dataset.json
+├── config/
+│   └── models.py
+│
+├── dataset/
+│   └── healthcare_cases.json
+│
+├── evaluation/
+│   ├── diagnosis.py
+│   ├── metrics.py
+│   ├── security.py
+│   └── treatment.py
+│
+├── logs/
+│   ├── fixed/
+│   ├── greedy/
+│   ├── random/
+│   ├── rl/
+│   └── round_robin/
 │
 ├── models/
 │   └── ollama_client.py
 │
-├── pipeline/
-│   ├── healthcare_pipeline.py
+├── orchestrator/
+│   └── healthcare_pipeline.py
+│
+├── prompts/
 │   ├── stage1.py
 │   ├── stage2.py
 │   └── stage3.py
 │
 ├── strategies/
 │   ├── base_strategy.py
-│   ├── fixed_assignment.py
-│   ├── random_assignment.py
-│   ├── round_robin_assignment.py
-│   └── greedy_assignment.py
-│
-├── evaluation/
-│   ├── metrics.py
-│   ├── evaluator.py
-│   └── summarize.py
+│   ├── fixed_strategy.py
+│   ├── greedy_strategy.py
+│   ├── random_strategy.py
+│   ├── rl_strategy.py
+│   └── round_robin_strategy.py
 │
 ├── utils/
-│   ├── preprocessing.py
-│   └── json_utils.py
+│   └── preprocessing.py
 │
 ├── run_fixed.py
+├── run_greedy.py
 ├── run_random.py
 ├── run_round_robin.py
-├── run_greedy.py
+├── run_rl.py
 │
-├── evaluate.py
-│
-└── logs/
-    ├── fixed/
-    ├── random/
-    ├── round_robin/
-    └── greedy/
+└── evaluate.py
 ```
 
 ---
@@ -391,11 +399,7 @@ Total Tokens
 ## Fixed Assignment
 
 ```bash
-python run_fixed.py \
---start 0 \
---limit 100 \
---batch-name batch1 \
---output-dir logs/fixed
+python run_fixed.py --start 0 --limit 100 --batch-name batch1 --output-dir logs/fixed
 ```
 
 ---
@@ -403,11 +407,7 @@ python run_fixed.py \
 ## Random Assignment
 
 ```bash
-python run_random.py \
---start 0 \
---limit 100 \
---batch-name batch1 \
---output-dir logs/random
+python run_random.py --start 0 --limit 100 --batch-name batch1 --output-dir logs/random
 ```
 
 ---
@@ -415,11 +415,7 @@ python run_random.py \
 ## Round Robin Assignment
 
 ```bash
-python run_round_robin.py \
---start 0 \
---limit 100 \
---batch-name batch1 \
---output-dir logs/round_robin
+python run_round_robin.py --start 0 --limit 100 --batch-name batch1 --output-dir logs/round_robin
 ```
 
 ---
@@ -427,43 +423,13 @@ python run_round_robin.py \
 ## Greedy Assignment
 
 ```bash
-python run_greedy.py \
---start 0 \
---limit 100 \
---batch-name batch1 \
---output-dir logs/greedy
+python run_greedy.py --start 0 --limit 100 --batch-name batch1 --output-dir logs/greedy
 ```
 
 ---
 
-# Batch-Based Experimentation
 
-Experiments can be executed in multiple batches.
-
-Example:
-
-```bash
-python run_fixed.py \
---start 0 \
---limit 100 \
---batch-name batch1
-```
-
-```bash
-python run_fixed.py \
---start 100 \
---limit 100 \
---batch-name batch2
-```
-
-```bash
-python run_fixed.py \
---start 200 \
---limit 100 \
---batch-name batch3
-```
-
-Results:
+# Results:
 
 ```text
 logs/fixed/
@@ -479,9 +445,7 @@ logs/fixed/
 Generate a consolidated summary:
 
 ```bash
-python evaluate.py \
---results-dir logs/fixed \
---output-name summary_fixed.json
+python evaluate.py --results-dir logs/fixed --output-name summary_fixed.json
 ```
 
 Output:
