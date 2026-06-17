@@ -102,14 +102,6 @@ class GreedyAssignmentStrategy(
                 best_model
             )
 
-        print(                                  #
-            f"\n{stage_name}"
-        )
-        for role, model in assignment.items():
-            print(
-                f"{role:25s} -> {model}"        
-            )                                   #
-
         return assignment
 
     def _update_average(

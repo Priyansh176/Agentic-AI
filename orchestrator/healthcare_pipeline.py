@@ -32,6 +32,7 @@ class HealthcarePipeline:
 
         self.strategy = strategy
         self.available_models = available_models
+        self.current_assignments = {}
 
     def run_case(self, case):
 
@@ -66,7 +67,7 @@ class HealthcarePipeline:
             "stage1": stage1,
             "stage2": stage2,
             "stage3": stage3,
-            "assignments": self._assignments_for(model_case),
+            "assignments": self.current_assignments,
             "trace": trace,
             "latency": latency
         }
@@ -83,6 +84,7 @@ class HealthcarePipeline:
             self.available_models,
             model_case
         )
+        self.current_assignments["symptom_analysis"] = assignments
 
         interpretation = self._run_role(
             stage_name,
@@ -172,6 +174,7 @@ Visible Patient Input:
             stage_name,
             self.available_models
         )
+        self.current_assignments["differential_diagnosis"] = assignments
 
         primary = self._run_role(
             stage_name,
@@ -259,6 +262,7 @@ Alternatives:
             stage_name,
             self.available_models
         )
+        self.current_assignments["treatment_planning"] = assignments
 
         plan = self._run_role(
             stage_name,
@@ -384,24 +388,6 @@ Patient Context:
         started_at = time.perf_counter()
         result = func(*args)
         return result, time.perf_counter() - started_at
-
-    def _assignments_for(self, model_case):
-
-        return {
-            "symptom_analysis": self.strategy.assign_roles(
-                "symptom_analysis",
-                self.available_models,
-                model_case
-            ),
-            "differential_diagnosis": self.strategy.assign_roles(
-                "differential_diagnosis",
-                self.available_models
-            ),
-            "treatment_planning": self.strategy.assign_roles(
-                "treatment_planning",
-                self.available_models
-            )
-        }
 
     def _usage_from_output(self, output):
 

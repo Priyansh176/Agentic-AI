@@ -8,7 +8,7 @@ from evaluation.diagnosis import evaluate_diagnosis
 from evaluation.security import evaluate_security
 from evaluation.treatment import evaluate_treatment
 from orchestrator.healthcare_pipeline import HealthcarePipeline
-from strategies.greedy_strategy import GreedyAssignmentStrategy
+from strategies.round_robin_strategy import RoundRobinAssignmentStrategy
 from evaluation.metrics import (
     evaluate_cost,
     evaluate_role_coverage
@@ -43,6 +43,7 @@ def evaluate_case(case, result):
             result
         )
     )
+
     metrics.update(
         evaluate_role_coverage(result)
     )
@@ -83,7 +84,7 @@ def run(args):
     else:
         dataset = dataset[start:start + args.limit]
 
-    strategy = GreedyAssignmentStrategy(AVAILABLE_MODELS)
+    strategy = RoundRobinAssignmentStrategy()
     pipeline = HealthcarePipeline(
         strategy=strategy,
         available_models=AVAILABLE_MODELS
@@ -108,26 +109,6 @@ def run(args):
                 case,
                 result
             )
-            strategy.update_profiles(
-                result,
-                metrics
-            )
-
-            # if (index + 1) % 10 == 0:                #
-
-            #     print(
-            #         "\nCurrent Role Profiles:"
-            #     )
-
-            #     for model, profile in (
-            #         strategy.model_profiles.items()
-            #     ):
-
-            #         print(
-            #             model,
-            #             profile
-            #         )                               #
-                                            
             record = {
                 "case_id": case["case_id"],
                 "stage1": result["stage1"],
@@ -174,13 +155,13 @@ def run(args):
             flush=True
         )
 
-    print("\nGreedy assignment experiment complete.")
+    print("\nRound Robin assignment experiment complete.")
     print(f"Results: {output_jsonl}")
 
 def parse_args():
 
     parser = argparse.ArgumentParser(
-        description="Run the greedy-assignment healthcare pipeline."
+        description="Run the round_robin-assignment healthcare pipeline."
     )
     parser.add_argument(
         "--dataset",
@@ -188,7 +169,7 @@ def parse_args():
     )
     parser.add_argument(
         "--output-dir",
-        default="logs/greedy"
+        default="logs/round_robin"
     )
     parser.add_argument(
         "--limit",
@@ -217,4 +198,4 @@ if __name__ == "__main__":
     )
 
 
-# python run_greedy.py --start 0 --limit 100 --batch-name batch1 --output-dir logs/greedy
+# python run_round_robin.py --start 0 --limit 10 --batch-name batch1 --output-dir logs/round_robin
