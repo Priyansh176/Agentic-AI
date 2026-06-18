@@ -37,6 +37,7 @@ class HealthcarePipeline:
     def run_case(self, case):
 
         started_at = time.perf_counter()
+        original_case = case
         model_case = build_model_input(case)
         trace = []
         latency = {}
@@ -44,12 +45,14 @@ class HealthcarePipeline:
         stage1, latency["stage1"] = self._timed(
             self._stage1,
             model_case,
+            original_case,
             trace
         )
 
         stage2, latency["stage2"] = self._timed(
             self._stage2,
             stage1,
+            original_case,
             trace
         )
 
@@ -57,6 +60,7 @@ class HealthcarePipeline:
             self._stage3,
             stage2,
             model_case,
+            original_case,
             trace
         )
 
@@ -75,6 +79,7 @@ class HealthcarePipeline:
     def _stage1(
         self,
         model_case,
+        original_case,
         trace
     ):
 
@@ -82,7 +87,7 @@ class HealthcarePipeline:
         assignments = self.strategy.assign_roles(
             stage_name,
             self.available_models,
-            model_case
+            original_case
         )
         self.current_assignments["symptom_analysis"] = assignments
 
@@ -166,13 +171,15 @@ Visible Patient Input:
     def _stage2(
         self,
         stage1,
+        original_case,
         trace
     ):
 
         stage_name = "differential_diagnosis"
         assignments = self.strategy.assign_roles(
             stage_name,
-            self.available_models
+            self.available_models,
+            original_case
         )
         self.current_assignments["differential_diagnosis"] = assignments
 
@@ -254,13 +261,15 @@ Alternatives:
         self,
         stage2,
         model_case,
+        original_case,
         trace
     ):
 
         stage_name = "treatment_planning"
         assignments = self.strategy.assign_roles(
             stage_name,
-            self.available_models
+            self.available_models,
+            original_case
         )
         self.current_assignments["treatment_planning"] = assignments
 
