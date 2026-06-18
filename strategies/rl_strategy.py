@@ -42,10 +42,14 @@ class RLAssignmentStrategy(AssignmentStrategy):
     def __init__(
         self,
         epsilon=0.2,
+        alpha=0.1,
+        gamma=0.9,
         q_table_path=None
     ):
 
         self.epsilon = epsilon
+        self.alpha = alpha
+        self.gamma = gamma
 
         self.q_tables = {
 
@@ -162,9 +166,22 @@ class RLAssignmentStrategy(AssignmentStrategy):
                 ) - 1
             )
 
-        return max(
-            q_values,
-            key=q_values.get
+        best_value = max(
+            q_values.values()
+        )
+
+        best_actions = [
+
+            int(action)
+
+            for action, value
+            in q_values.items()
+
+            if value == best_value
+        ]
+
+        return random.choice(
+            best_actions
         )
 
     def assign_roles(
@@ -283,3 +300,76 @@ class RLAssignmentStrategy(AssignmentStrategy):
             self.q_tables = json.load(
                 f
             )
+
+    def update_q_table(
+        self,
+        stage_name,
+        reward
+    ):
+
+        state = self.last_states[
+            stage_name
+        ]
+
+        action = self.last_actions[
+            stage_name
+        ]
+
+        state_key = str(state)
+
+        current_q = self.q_tables[
+            stage_name
+        ][state_key][str(action)]
+
+        updated_q = current_q + (
+
+            self.alpha *
+
+            (
+                reward
+                - current_q
+            )
+        )
+
+        self.q_tables[
+            stage_name
+        ][state_key][str(action)] = updated_q
+
+    def learn(
+        self,
+        metrics
+    ):
+
+        reward = (
+
+            0.4 *
+            metrics.get("diagnosis_correct",0.0)
+
+            +
+
+            0.3 *
+            metrics.get("treatment_f1_score", 0.0)
+
+            +
+
+            0.3 *
+            (
+                1 -
+                metrics.get("security_failure", 0)
+            )
+        )
+
+        for stage in [
+
+            "symptom_analysis",
+            "differential_diagnosis",
+            "treatment_planning"
+
+        ]:
+
+            self.update_q_table(
+                stage,
+                reward
+            )
+
+        return reward
