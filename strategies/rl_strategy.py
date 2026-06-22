@@ -51,6 +51,7 @@ class RLAssignmentStrategy(AssignmentStrategy):
         self.alpha = alpha
         self.gamma = gamma
         self.last_actions = {}
+        self.episode = []
 
         self.q_tables = {
 
@@ -206,6 +207,12 @@ class RLAssignmentStrategy(AssignmentStrategy):
             state
         )
 
+        self.episode.append({
+            "stage": stage_name,
+            "state": state,
+            "action": action
+        })
+
         self.last_actions[stage_name] = (
             state,
             action
@@ -243,23 +250,11 @@ class RLAssignmentStrategy(AssignmentStrategy):
             stage_name
         ] = state
 
-        print(                                      #
-            f"\n[RL] {stage_name}"
-        )
+        print(f"\n[RL] {stage_name}")       #
 
-        print(
-            f"State: {state}"
-        )
+        print(f"State: {state}")
 
-        print(
-            f"Action: {action}"
-        )
-
-        for role, model in assignment.items():
-
-            print(
-                f"{role:<25} -> {model}"
-            )                                       #
+        print(f"Action: {action}")          #
 
         return assignment
 
@@ -444,3 +439,120 @@ class RLAssignmentStrategy(AssignmentStrategy):
             ][state_key][str(action)] = updated_q
 
         self.save_q_table("logs/rl/q_table.json")
+
+    def update_q_value(
+        self,
+        stage,
+        state,
+        action,
+        reward,
+        next_state=None
+    ):
+
+        state_key = str(state)
+
+        current_q = self.q_tables[stage][state_key][str(action)]
+
+        if next_state is None:
+
+            target = reward
+
+        else:
+
+            next_key = str(next_state)
+
+            max_future_q = max(
+                self.q_tables[stage]
+                .get(next_key, {})
+                .values(),
+                default=0.0
+            )
+
+            target = reward + (
+                self.gamma *
+                max_future_q
+            )
+
+        new_q = current_q + (
+            self.alpha *
+            (target - current_q)
+        )
+
+        self.q_tables[
+            stage
+        ][state_key][str(action)] = new_q
+
+        print(                          #
+            f"Reward={reward:.3f} "
+            f"Target={target:.3f}"
+        )                               #
+
+    def learn_episode(
+        self,
+        metrics
+    ):
+
+        diagnosis_correct = metrics.get(
+            "diagnosis_correct",
+            0
+        )
+
+        treatment_f1 = metrics.get(
+            "treatment_f1_score",
+            metrics.get("treatment_f1", 0.0)
+        )
+
+        security_failure = metrics.get(
+            "security_failure",
+            0
+        )
+
+        symptom_reward = (
+            0.7 * (1-security_failure)
+            +
+            0.3 * diagnosis_correct
+        )
+
+        diagnosis_reward = (
+            0.8 * diagnosis_correct
+            +
+            0.2 * treatment_f1
+        )
+
+        treatment_reward = (
+            0.7 * treatment_f1
+            +
+            0.3 * (1-security_failure)
+        )
+
+        s1 = self.episode[0]
+        s2 = self.episode[1]
+        s3 = self.episode[2]
+
+        self.update_q_value(
+            s3["stage"],
+            s3["state"],
+            s3["action"],
+            treatment_reward,
+            None
+        )
+
+        self.update_q_value(
+            s2["stage"],
+            s2["state"],
+            s2["action"],
+            diagnosis_reward,
+            s3["state"]
+        )
+
+        self.update_q_value(
+            s1["stage"],
+            s1["state"],
+            s1["action"],
+            symptom_reward,
+            s2["state"]
+        )
+
+        self.save_q_table("logs/rl/q_table.json")
+
+        self.episode = []
