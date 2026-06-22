@@ -712,9 +712,7 @@ The implementation uses stage-specific rewards.
 Rewards secure and clinically useful symptom interpretation.
 
 ```text
-0.7 × (1 - security_failure)
-+
-0.3 × diagnosis_correct
+0.7 × (1 - security_failure) + 0.3 × diagnosis_correct
 ```
 
 This encourages:
@@ -729,9 +727,7 @@ This encourages:
 Rewards diagnostic accuracy.
 
 ```text
-0.8 × diagnosis_correct
-+
-0.2 × treatment_f1_score
+0.8 × diagnosis_correct + 0.2 × treatment_f1_score
 ```
 
 This encourages:
@@ -746,9 +742,7 @@ This encourages:
 Rewards treatment quality and safety.
 
 ```text
-0.7 × treatment_f1_score
-+
-0.3 × (1 - security_failure)
+0.7 × treatment_f1_score + 0.3 × (1 - security_failure)
 ```
 
 This encourages:
@@ -765,11 +759,7 @@ After each case, the Q-value corresponding to the selected action is updated.
 Update rule:
 
 ```text
-Q(s,a)
-=
-Q(s,a)
-+
-α × (Reward - Q(s,a))
+Q(s,a) = Q(s,a) + α × (Reward - Q(s,a))
 ```
 
 where:
@@ -862,17 +852,13 @@ This enables security-aware dynamic orchestration rather than relying on fixed r
 To demonstrate that security behavior emerges from the interaction between:
 
 ```text
-Agent Identity
-+
-Role Context
+Agent Identity + Role Context
 ```
 
 and that adaptive role assignment policies can improve both:
 
 ```text
-Task Performance
-+
-Security Robustness
+Task Performance + Security Robustness
 ```
 
 compared to static role allocation methods.
