@@ -361,18 +361,10 @@ class RLAssignmentStrategy(AssignmentStrategy):
         ][state_key][str(action)]
 
         updated_q = current_q + (
-
-            self.alpha *
-
-            (
-                reward
-                - current_q
-            )
+            self.alpha * (reward - current_q)
         )
 
-        self.q_tables[
-            stage_name
-        ][state_key][str(action)] = updated_q
+        self.q_tables[stage_name][state_key][str(action)] = updated_q
 
     def learn(
         self,
@@ -380,30 +372,13 @@ class RLAssignmentStrategy(AssignmentStrategy):
     ):
 
         reward = (
-
-            0.4 *
-            metrics.get("diagnosis_correct",0.0)
-
-            +
-
-            0.3 *
-            metrics.get("treatment_f1_score", 0.0)
-
-            +
-
-            0.3 *
-            (
-                1 -
-                metrics.get("security_failure", 0)
-            )
+            0.4 * metrics.get("diagnosis_correct",0.0) + 0.3 * metrics.get("treatment_f1_score", 0.0) + 0.3 *(1 - metrics.get("security_failure", 0))
         )
 
         for stage in [
-
             "symptom_analysis",
             "differential_diagnosis",
             "treatment_planning"
-
         ]:
             
             self.epsilon = max(
@@ -435,21 +410,15 @@ class RLAssignmentStrategy(AssignmentStrategy):
         )
 
         symptom_reward = (
-            0.7 * (1 - security_failure)
-            +
-            0.3 * diagnosis_correct
+            0.7 * (1 - security_failure) + 0.3 * diagnosis_correct
         )
 
         diagnosis_reward = (
-            0.8 * diagnosis_correct
-            +
-            0.2 * treatment_f1
+            0.8 * diagnosis_correct + 0.2 * treatment_f1
         )
 
         treatment_reward = (
-            0.7 * treatment_f1
-            +
-            0.3 * (1 - security_failure)
+            0.7 * treatment_f1 + 0.3 * (1 - security_failure)
         )
 
         rewards = {
@@ -467,18 +436,14 @@ class RLAssignmentStrategy(AssignmentStrategy):
 
             state_key = str(state)
 
-            current_q = self.q_tables[
-                stage
-            ][state_key][str(action)]
+            current_q = self.q_tables[stage][state_key][str(action)]
 
             updated_q = current_q + (
                 self.alpha *
                 (reward - current_q)
             )
 
-            self.q_tables[
-                stage
-            ][state_key][str(action)] = updated_q
+            self.q_tables[stage][state_key][str(action)] = updated_q
 
         self.save_q_table("logs/rl/q_table.json")
 
@@ -488,7 +453,8 @@ class RLAssignmentStrategy(AssignmentStrategy):
         state,
         action,
         reward,
-        next_state=None
+        next_state=None,
+        next_stage=None
     ):
 
         state_key = str(state)
@@ -496,15 +462,13 @@ class RLAssignmentStrategy(AssignmentStrategy):
         current_q = self.q_tables[stage][state_key][str(action)]
 
         if next_state is None:
-
             target = reward
 
         else:
-
             next_key = str(next_state)
 
             max_future_q = max(
-                self.q_tables[stage]
+                self.q_tables[next_stage]
                 .get(next_key, {})
                 .values(),
                 default=0.0
@@ -515,14 +479,9 @@ class RLAssignmentStrategy(AssignmentStrategy):
                 max_future_q
             )
 
-        new_q = current_q + (
-            self.alpha *
-            (target - current_q)
-        )
+        new_q = current_q + (self.alpha * (target - current_q))
 
-        self.q_tables[
-            stage
-        ][state_key][str(action)] = new_q
+        self.q_tables[stage][state_key][str(action)] = new_q
 
         print(                          #
             f"Reward={reward:.3f} "
@@ -550,21 +509,15 @@ class RLAssignmentStrategy(AssignmentStrategy):
         )
 
         symptom_reward = (
-            0.7 * (1-security_failure)
-            +
-            0.3 * diagnosis_correct
+            0.7 * (1-security_failure) + 0.3 * diagnosis_correct
         )
 
         diagnosis_reward = (
-            0.8 * diagnosis_correct
-            +
-            0.2 * treatment_f1
+            0.8 * diagnosis_correct + 0.2 * treatment_f1
         )
 
         treatment_reward = (
-            0.7 * treatment_f1
-            +
-            0.3 * (1-security_failure)
+            0.7 * treatment_f1 + 0.3 * (1-security_failure)
         )
 
         s1 = self.episode[0]
@@ -584,7 +537,8 @@ class RLAssignmentStrategy(AssignmentStrategy):
             s2["state"],
             s2["action"],
             diagnosis_reward,
-            s3["state"]
+            s3["state"],
+            s3["stage"]
         )
 
         self.update_q_value(
@@ -592,11 +546,18 @@ class RLAssignmentStrategy(AssignmentStrategy):
             s1["state"],
             s1["action"],
             symptom_reward,
-            s2["state"]
+            s2["state"],
+            s2["stage"]
         )
 
         self.save_q_table("logs/rl/q_table.json")
 
+        print(f"Epsilon = {self.epsilon:.4f}")      #
+
+        self.epsilon = max(
+            self.min_epsilon,
+            self.epsilon * self.epsilon_decay
+        )
         self.episode = []
 
     def update_stage_output(
