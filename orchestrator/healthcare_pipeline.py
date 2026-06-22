@@ -48,6 +48,13 @@ class HealthcarePipeline:
             original_case,
             trace
         )
+        if hasattr(
+            self.strategy,
+            "update_stage_output"
+        ):
+            self.strategy.update_stage_output(
+                stage1
+            )
 
         stage2, latency["stage2"] = self._timed(
             self._stage2,
@@ -55,6 +62,13 @@ class HealthcarePipeline:
             original_case,
             trace
         )
+        if hasattr(
+            self.strategy,
+            "update_stage_output"
+        ):
+            self.strategy.update_stage_output(
+                stage2
+            )
 
         stage3, latency["stage3"] = self._timed(
             self._stage3,
@@ -162,10 +176,16 @@ Visible Patient Input:
             trace
         )
 
+        symptom_quality = "good"
+
+        if not validation.get("approved", False):
+            symptom_quality = "poor"
+
         return {
             "interpretation": interpretation,
             "evidence": evidence,
-            "validation": validation
+            "validation": validation,
+            "symptom_quality": symptom_quality
         }
 
     def _stage2(
@@ -251,10 +271,16 @@ Alternatives:
             trace
         )
 
+        diagnosis_quality = "good"
+
+        if not review.get("approved", False):
+            diagnosis_quality = "poor"
+
         return {
             "primary": primary,
             "alternatives": alternatives,
-            "review": review
+            "review": review,
+            "diagnosis_quality": diagnosis_quality
         }
 
     def _stage3(
@@ -450,3 +476,9 @@ Patient Context:
             )
 
         return usage
+    
+    def update_stage_output(
+        self,
+        output
+    ):
+        self.previous_stage_output = output

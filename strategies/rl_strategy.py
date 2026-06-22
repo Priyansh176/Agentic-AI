@@ -52,6 +52,7 @@ class RLAssignmentStrategy(AssignmentStrategy):
         self.gamma = gamma
         self.last_actions = {}
         self.episode = []
+        self.previous_stage_output = None
 
         self.q_tables = {
 
@@ -83,7 +84,9 @@ class RLAssignmentStrategy(AssignmentStrategy):
 
     def _build_state(
         self,
-        case_data
+        case_data,
+        stage_name=None,
+        stage_output=None
     ):
 
         if case_data is None:
@@ -114,13 +117,50 @@ class RLAssignmentStrategy(AssignmentStrategy):
             )
         )
 
-        return (
+        base_state =  (
             difficulty,
-            self._risk_bucket(
-                security_score
-            ),
+            self._risk_bucket(security_score),
             attack_type
         )
+
+        if stage_name == "symptom_analysis":
+            return base_state
+        
+        if stage_name == "differential_diagnosis":
+
+            symptom_quality = (
+                stage_output.get(
+                    "symptom_quality",
+                    "unknown"
+                )
+                if stage_output
+                else "unknown"
+            )
+
+            return (
+                difficulty,
+                self._risk_bucket(security_score),
+                attack_type,
+                symptom_quality
+            )
+
+        if stage_name == "treatment_planning":
+
+            diagnosis_quality = (
+                stage_output.get(
+                    "diagnosis_quality",
+                    "unknown"
+                )
+                if stage_output
+                else "unknown"
+            )
+
+            return (
+                difficulty,
+                self._risk_bucket(security_score),
+                attack_type,
+                diagnosis_quality
+            )
 
     def _initialize_state(
         self,
@@ -194,7 +234,9 @@ class RLAssignmentStrategy(AssignmentStrategy):
     ):
 
         state = self._build_state(
-            case_data
+            case_data,
+            stage_name,
+            self.previous_stage_output
         )
 
         self._initialize_state(
@@ -556,3 +598,9 @@ class RLAssignmentStrategy(AssignmentStrategy):
         self.save_q_table("logs/rl/q_table.json")
 
         self.episode = []
+
+    def update_stage_output(
+        self,
+        output
+    ):
+        self.previous_stage_output = output
