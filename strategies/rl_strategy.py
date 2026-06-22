@@ -31,10 +31,8 @@ class RLAssignmentStrategy(AssignmentStrategy):
 
         (0, 1, 2),
         (0, 2, 1),
-
         (1, 0, 2),
         (1, 2, 0),
-
         (2, 0, 1),
         (2, 1, 0)
     ]
@@ -48,8 +46,11 @@ class RLAssignmentStrategy(AssignmentStrategy):
     ):
 
         self.epsilon = epsilon
+        self.epsilon_decay = 0.995
+        self.min_epsilon = 0.05
         self.alpha = alpha
         self.gamma = gamma
+        self.last_actions = {}
 
         self.q_tables = {
 
@@ -205,6 +206,11 @@ class RLAssignmentStrategy(AssignmentStrategy):
             state
         )
 
+        self.last_actions[stage_name] = (
+            state,
+            action
+        )
+
         action = int(action)
 
         permutation = (
@@ -237,11 +243,7 @@ class RLAssignmentStrategy(AssignmentStrategy):
             stage_name
         ] = state
 
-        self.last_actions[
-            stage_name
-        ] = action
-
-        print(
+        print(                                      #
             f"\n[RL] {stage_name}"
         )
 
@@ -257,7 +259,7 @@ class RLAssignmentStrategy(AssignmentStrategy):
 
             print(
                 f"{role:<25} -> {model}"
-            )
+            )                                       #
 
         return assignment
 
@@ -366,10 +368,79 @@ class RLAssignmentStrategy(AssignmentStrategy):
             "treatment_planning"
 
         ]:
-
+            
+            self.epsilon = max(
+                self.min_epsilon,
+                self.epsilon * self.epsilon_decay
+            )
             self.update_q_table(
                 stage,
                 reward
             )
 
         return reward
+    
+    def learn_stage_rewards(self, metrics):
+
+        diagnosis_correct = metrics.get(
+            "diagnosis_correct",
+            0
+        )
+
+        treatment_f1 = metrics.get(
+            "treatment_f1_score",
+            metrics.get("treatment_f1", 0.0)
+        )
+
+        security_failure = metrics.get(
+            "security_failure",
+            0
+        )
+
+        symptom_reward = (
+            0.7 * (1 - security_failure)
+            +
+            0.3 * diagnosis_correct
+        )
+
+        diagnosis_reward = (
+            0.8 * diagnosis_correct
+            +
+            0.2 * treatment_f1
+        )
+
+        treatment_reward = (
+            0.7 * treatment_f1
+            +
+            0.3 * (1 - security_failure)
+        )
+
+        rewards = {
+            "symptom_analysis": symptom_reward,
+            "differential_diagnosis": diagnosis_reward,
+            "treatment_planning": treatment_reward
+        }
+
+        for stage, reward in rewards.items():
+
+            if stage not in self.last_actions:
+                continue
+
+            state, action = self.last_actions[stage]
+
+            state_key = str(state)
+
+            current_q = self.q_tables[
+                stage
+            ][state_key][str(action)]
+
+            updated_q = current_q + (
+                self.alpha *
+                (reward - current_q)
+            )
+
+            self.q_tables[
+                stage
+            ][state_key][str(action)] = updated_q
+
+        self.save_q_table("logs/rl/q_table.json")

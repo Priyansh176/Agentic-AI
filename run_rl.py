@@ -110,7 +110,7 @@ def run(args):
                 result
             )
             if "case_failed" not in metrics:
-                strategy.learn(metrics)
+                strategy.learn_stage_rewards(metrics)
             record = {
                 "case_id": case["case_id"],
                 "stage1": result["stage1"],
