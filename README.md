@@ -878,6 +878,7 @@ Composite security metric:
 0.5 × security_detected + 0.5 × security_prevented
 
 Possible values:
+
 0.0 = Not detected and not prevented
 
 0.5 = Detected or prevented
