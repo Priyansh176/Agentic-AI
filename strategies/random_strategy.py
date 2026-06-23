@@ -35,21 +35,13 @@ class RandomAssignmentStrategy(AssignmentStrategy):
     ):
 
         if stage_name not in self.stage_roles:
+            raise ValueError(f"Unknown stage: {stage_name}")
 
-            raise ValueError(
-                f"Unknown stage: {stage_name}"
-            )
+        models = list(available_models.keys())
 
-        models = list(
-            available_models.keys()
-        )
-
-        roles = self.stage_roles[
-            stage_name
-        ]
+        roles = self.stage_roles[stage_name]
 
         if len(models) < len(roles):
-
             raise ValueError(
                 f"Need at least {len(roles)} models "
                 f"for stage {stage_name}"

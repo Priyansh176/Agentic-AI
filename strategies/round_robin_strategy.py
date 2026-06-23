@@ -40,9 +40,7 @@ class RoundRobinAssignmentStrategy(
         case_data=None
     ):
 
-        roles = STAGE_ROLES[
-            stage_name
-        ]
+        roles = STAGE_ROLES[stage_name]
 
         rotation = (
             self.rotation_index % len(
@@ -56,21 +54,9 @@ class RoundRobinAssignmentStrategy(
             roles
         ):
 
-            model = available_models[
-                (
-                    index
-                    +
-                    rotation
-                )
-                %
-                len(
-                    available_models
-                )
-            ]
+            model = available_models[(index + rotation) % len(available_models)]
 
-            assignment[
-                role
-            ] = model
+            assignment[role] = model
 
         if stage_name == "treatment_planning":
             self.rotation_index += 1

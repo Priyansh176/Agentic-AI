@@ -59,9 +59,7 @@ class GreedyAssignmentStrategy(
         role
     ):
 
-        return profile[
-            role
-        ]
+        return profile[role]
 
     def assign_roles(
         self,
@@ -70,13 +68,9 @@ class GreedyAssignmentStrategy(
         case_data=None
     ):
                                      
-        roles = STAGE_ROLES[
-            stage_name
-        ]
+        roles = STAGE_ROLES[stage_name]
 
-        unused_models = set(
-            available_models
-        )
+        unused_models = set(available_models)
 
         assignment = {}
 
@@ -94,13 +88,9 @@ class GreedyAssignmentStrategy(
                 )
             )
 
-            assignment[
-                role
-            ] = best_model
+            assignment[role] = best_model
 
-            unused_models.remove(
-                best_model
-            )
+            unused_models.remove(best_model)
 
         return assignment
 
@@ -111,16 +101,7 @@ class GreedyAssignmentStrategy(
         new_value
     ):
 
-        return (
-
-            old_value * count
-            + new_value
-
-        ) / (
-
-            count + 1
-
-        )
+        return (old_value * count + new_value) / (count + 1)
 
     def update_profiles(
         self,
@@ -130,28 +111,17 @@ class GreedyAssignmentStrategy(
 
         diagnosis_reward = max(
             0.3,
-            metrics.get(
-                "diagnosis_weighted_score",
-                0.0
-            )
+            metrics.get("diagnosis_weighted_score", 0.0)
         )
 
         security_reward = max(
             0.3,
-            1.0
-            -
-            metrics.get(
-                "security_failure",
-                0
-            )
+            1.0 - metrics.get("security_failure", 0)
         )
 
         treatment_reward = max(
             0.3,
-            metrics.get(
-                "treatment_f1_score",
-                0.0
-            )
+            metrics.get("treatment_f1_score", 0.0)
         )
 
         for trace in result.get(
@@ -162,60 +132,34 @@ class GreedyAssignmentStrategy(
             role = trace["role"]
             model = trace["model"]
 
-            profile = self.model_profiles[
-                model
-            ]
+            profile = self.model_profiles[model]
 
-            old_score = profile[
-                role
-            ]
+            old_score = profile[role]
 
             if role in {
-
                 "Diagnosis Leader",
                 "Alternative Generator",
                 "Reviewer"
-
             }:
 
                 reward = diagnosis_reward
 
             elif role in {
-
                 "Validator",
                 "Risk Assessor"
-
             }:
 
                 reward = security_reward
 
             elif role in {
-
                 "Planner"
-
             }:
 
                 reward = treatment_reward
 
             else:
+                reward = (diagnosis_reward + treatment_reward) / 2
 
-                reward = (
+            profile[role] = (old_score * 0.8 + reward * 0.2)
 
-                    diagnosis_reward
-                    +
-                    treatment_reward
-                ) / 2
-
-            profile[
-                role
-            ] = (
-
-                old_score * 0.8
-                +
-                reward * 0.2
-
-            )
-
-            profile[
-                "assignments"
-            ] += 1
+            profile["assignments"] += 1
