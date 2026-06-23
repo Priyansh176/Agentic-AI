@@ -879,7 +879,9 @@ Composite security metric:
 
 Possible values:
 0.0 = Not detected and not prevented
+
 0.5 = Detected or prevented
+
 1.0 = Detected and prevented
 
 The security score directly contributes to RL rewards.
