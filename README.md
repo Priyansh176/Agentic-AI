@@ -459,212 +459,245 @@ logs/fixed/
 
 ## Overview
 
-The Reinforcement Learning strategy extends dynamic role assignment by learning which model-role combinations perform best under different healthcare and security conditions.
+The Reinforcement Learning (RL) strategy implements security-aware dynamic role assignment using Q-Learning.
 
-Unlike Fixed, Random, Round Robin, and Greedy strategies, the RL strategy does not rely on predefined rules or manually maintained model profiles. Instead, it learns from previous cases and continuously updates a Q-table that stores the expected utility of different role assignments.
+Unlike Fixed, Random, Round Robin, and Greedy strategies, the RL agent learns which model-role assignments perform best under different healthcare and security conditions.
 
-The objective is to learn an adaptive policy that maximizes diagnostic quality, treatment quality, and security robustness simultaneously.
+The objective is to maximize:
+
+* Diagnosis Accuracy
+* Treatment Quality
+* Security Robustness
+
+while adapting to:
+
+* Case Difficulty
+* Security Risk
+* Attack Type
+* Previous Stage Performance
+
+The learned policy is stored in a persistent Q-table and continuously improves as additional cases are processed.
 
 ---
 
-## RL Formulation
+## RL Problem Formulation
 
-The role assignment problem is formulated as a reinforcement learning task.
-
-### State Space
-
-For each patient case, the RL agent constructs a state consisting of:
+The healthcare workflow is modeled as a sequential decision process.
 
 ```text
-(
-    difficulty_level,
-    security_risk_bucket,
-    attack_type
-)
+Patient Case
+      │
+      ▼
+Stage 1: Symptom Analysis
+      │
+      ▼
+Stage 2: Differential Diagnosis
+      │
+      ▼
+Stage 3: Treatment Planning
+      │
+      ▼
+Evaluation
+      │
+      ▼
+Q-Value Update
 ```
 
-Example states:
+At each stage, the RL agent observes the current state and chooses an action corresponding to a role assignment configuration.
 
-```text
+---
+
+## State Space
+
+The implementation uses stage-specific states.
+
+### Stage 1 State
+
+State:
+
+(difficulty_level, security_risk_bucket, attack_type)
+
+Examples:
+
 ('easy', 'low', 'none')
 
 ('hard', 'high', 'privacy_leakage')
 
 ('expert', 'high', 'unsafe_treatment')
-```
 
-#### Difficulty Level
+---
 
-Obtained directly from the dataset:
+### Stage 2 State
 
-```text
-easy
-moderate
-hard
-expert
-```
+Stage 2 additionally considers the quality of Stage 1 output.
 
-#### Security Risk Bucket
+State:
 
-Derived from the security risk score.
+(difficulty_level, security_risk_bucket, attack_type, symptom_quality)
 
-```text
-0 - 3  -> low
-4 - 6  -> medium
-7 - 10 -> high
-```
+where:
 
-#### Attack Type
+symptom_quality ∈ {good, poor}
 
 Examples:
 
+('hard', 'high', 'privacy_leakage', 'good')
+
+('moderate', 'high', 'prompt_injection', 'poor')
+
+---
+
+### Stage 3 State
+
+Stage 3 additionally considers the quality of Stage 2 output.
+
+State:
+
+(difficulty_level, security_risk_bucket, attack_type, diagnosis_quality)
+
+where:
+
+diagnosis_quality ∈ {good, poor}
+
+Examples:
+
+('hard', 'high', 'privacy_leakage', 'good')
+
+('expert', 'high', 'unsafe_treatment', 'poor')
+
+This allows treatment planning decisions to depend on diagnostic performance.
+
+---
+
+## Security Risk Buckets
+
+Risk scores from the dataset are converted into buckets.
+
 ```text
-none
-prompt_injection
-privacy_leakage
-unsafe_treatment
-role_confusion
-instruction_override
-data_poisoning
-diagnosis_manipulation
-tool_misuse
-confidential_record_request
+0 - 3   → low
+
+4 - 6   → medium
+
+7 - 10  → high
 ```
 
-The resulting state represents the current clinical and security context of the case.
+The risk bucket becomes part of the RL state representation.
 
 ---
 
 ## Action Space
 
-Each action corresponds to a complete assignment of the three available models to the three roles of a stage.
+Each action represents a complete assignment of three models to three roles.
 
 Available models:
 
 ```text
 llama3.1:8b
+
 mistral:latest
+
 gemma3:4b
 ```
 
-For three models there are:
+Number of possible assignments:
 
 ```text
 3! = 6
 ```
 
-possible assignments.
-
-Actions are represented as permutations:
-
-```python
-(0,1,2)
-(0,2,1)
-(1,0,2)
-(1,2,0)
-(2,0,1)
-(2,1,0)
-```
-
-Example:
+Actions:
 
 ```text
-Action 0
+Action 0 → (0,1,2)
 
-Interpreter        -> llama3.1:8b
-Evidence Collector -> mistral:latest
-Validator          -> gemma3:4b
+Action 1 → (0,2,1)
+
+Action 2 → (1,0,2)
+
+Action 3 → (1,2,0)
+
+Action 4 → (2,0,1)
+
+Action 5 → (2,1,0)
 ```
 
-Example:
-
-```text
-Action 5
-
-Interpreter        -> gemma3:4b
-Evidence Collector -> mistral:latest
-Validator          -> llama3.1:8b
-```
-
-The same action space is used independently within:
-
-```text
-Stage 1: Symptom Analysis
-Stage 2: Differential Diagnosis
-Stage 3: Treatment Planning
-```
+The same action space is used independently in all three stages.
 
 ---
 
-## Action Selection
+## Epsilon-Greedy Policy
 
-The RL agent uses an epsilon-greedy policy.
+The RL agent uses an epsilon-greedy exploration strategy.
 
 ### Exploration
 
 With probability:
 
 ```text
-epsilon
+ε
 ```
 
 a random action is selected.
 
-This allows the agent to explore previously unseen assignments.
+Purpose:
+
+* Explore unseen assignments
+* Avoid local optima
+* Collect additional experience
+
+---
 
 ### Exploitation
 
 With probability:
 
 ```text
-1 - epsilon
+1 − ε
 ```
 
-the action with the highest Q-value for the current state is selected.
+the action with the highest Q-value is selected.
 
-This allows the agent to exploit previously learned knowledge.
+Purpose:
+
+* Use learned knowledge
+* Improve performance
+* Increase policy stability
 
 ---
 
 ## Epsilon Decay
 
-Initially:
+Initial value:
 
 ```text
-epsilon = 0.2
+ε = 0.20
 ```
 
-After each case:
+After each completed patient case:
 
 ```text
-epsilon = epsilon × 0.995
+ε = ε × 0.995
 ```
 
-with a minimum value:
+Minimum value:
 
 ```text
-epsilon = 0.05
+ε = 0.05
 ```
 
-This enables:
-
-```text
-Early Training
-→ More Exploration
-
-Later Training
-→ More Exploitation
-```
+This gradually shifts learning from exploration toward exploitation.
 
 ---
 
-## Q-Table
+## Q-Table Structure
 
-A separate Q-table is maintained for each stage:
+Separate Q-values are maintained for:
 
 ```text
 symptom_analysis
+
 differential_diagnosis
+
 treatment_planning
 ```
 
@@ -672,9 +705,9 @@ Structure:
 
 ```json
 {
-    "state": {
-        "action": q_value
-    }
+  "state": {
+    "action": q_value
+  }
 }
 ```
 
@@ -682,133 +715,183 @@ Example:
 
 ```json
 {
-    "('easy','low','none')": {
-        "0": 0.10,
-        "1": 0.00,
-        "2": 0.00,
-        "3": 0.08,
-        "4": 0.00,
-        "5": 0.03
-    }
+  "('hard','high','privacy_leakage')": {
+    "0": 0.12,
+    "1": 0.31,
+    "2": 0.07,
+    "3": 0.02,
+    "4": 0.05,
+    "5": 0.10
+  }
 }
 ```
 
-The Q-table is stored in:
+Storage location:
 
 ```text
 logs/rl/q_table.json
 ```
 
-and is reused across batches so learning persists over time.
+The Q-table persists across batches and experiments.
 
 ---
 
 ## Reward Formulation
 
-The implementation uses stage-specific rewards.
+Each stage receives its own reward signal.
 
-### Stage 1: Symptom Analysis Reward
-
-Rewards secure and clinically useful symptom interpretation.
+### Stage 1 Reward
 
 ```text
-0.7 × (1 - security_failure) + 0.3 × diagnosis_correct
+0.7 × (1 − security_failure) + 0.3 × diagnosis_correct
 ```
 
-This encourages:
+Encourages:
 
-* Security awareness
-* High-quality evidence extraction
+* Secure symptom extraction
+* Useful evidence gathering
 
 ---
 
-### Stage 2: Differential Diagnosis Reward
-
-Rewards diagnostic accuracy.
+### Stage 2 Reward
 
 ```text
-0.8 × diagnosis_correct + 0.2 × treatment_f1_score
+0.8 × diagnosis_correct + 0.2 × treatment_f1
 ```
 
-This encourages:
+Encourages:
 
-* Correct primary diagnosis
-* Useful alternative diagnoses
+* Accurate diagnoses
+* Clinically useful reasoning
 
 ---
 
-### Stage 3: Treatment Planning Reward
-
-Rewards treatment quality and safety.
+### Stage 3 Reward
 
 ```text
-0.7 × treatment_f1_score + 0.3 × (1 - security_failure)
+0.7 × treatment_f1 + 0.3 × (1 − security_failure)
 ```
 
-This encourages:
+Encourages:
 
-* Better treatment recommendations
-* Safer treatment planning
+* Safe treatment planning
+* High-quality treatment recommendations
 
 ---
 
-## Q-Value Update
+## Bellman Q-Learning Update
 
-After each case, the Q-value corresponding to the selected action is updated.
+The implementation uses the Bellman optimality equation.
 
-Update rule:
-
-```text
-Q(s,a) = Q(s,a) + α × (Reward - Q(s,a))
-```
-
-where:
+For each stage:
 
 ```text
-α = 0.1
+Q(s,a) ← Q(s,a) + α × [ Reward + γ × max Q(s',a') − Q(s,a) ]
 ```
 
-is the learning rate.
+Parameters:
 
+```text
+α = 0.10
+```
 
-The action becomes more likely to be selected in future cases with similar states.
+Learning rate (how much new info overrides old)
+
+```text
+γ = 0.90
+```
+
+Discount factor (determines importance of future rewards)
 
 ---
 
-## Batch-Based Learning
+## Sequential Learning Across Stages
 
-Experiments are executed in batches.
+The healthcare workflow forms a chain of dependent decisions.
 
-After every batch:
+Example:
 
-1. Cases are processed.
-2. Rewards are computed.
-3. Q-values are updated.
-4. The Q-table is saved.
+```text
+Stage 1 State
 
-The next batch loads the existing Q-table and continues training from the previously learned policy.
+('hard','high','privacy_leakage')
 
-Thus learning accumulates across all batches rather than restarting each time.
+↓
+
+Stage 1 Output Quality = good
+
+↓
+
+Stage 2 State
+
+('hard','high','privacy_leakage','good')
+
+↓
+
+Stage 2 Output Quality = poor
+
+↓
+
+Stage 3 State
+
+('hard','high','privacy_leakage','poor')
+```
+
+This allows the RL policy to adapt based on earlier stage performance.
 
 ---
 
-## Current Learning Workflow
+## Security Evaluation
+
+Security is evaluated using adversarial healthcare cases embedded in the dataset.
+
+Attack examples:
+
+* Prompt Injection
+* Privacy Leakage
+* Unsafe Treatment
+* Role Confusion
+* Instruction Override
+* Data Poisoning
+* Diagnosis Manipulation
+* Treatment Manipulation
+* Tool Misuse
+
+Validator and reviewer agents examine outputs at each stage.
+
+If an attack successfully influences reasoning or treatment generation:
+
+```text
+security_failure = 1
+```
+
+Otherwise:
+
+```text
+security_failure = 0
+```
+
+The security outcome directly affects the RL reward.
+
+---
+
+## Learning Workflow
 
 ```text
 Patient Case
         │
         ▼
-Construct State
+Build State
         │
         ▼
 Select Action
 (Epsilon-Greedy)
         │
         ▼
-Assign Models to Roles
+Assign Models To Roles
         │
         ▼
-Execute Pipeline
+Execute Healthcare Pipeline
         │
         ▼
 Evaluate Outputs
@@ -817,33 +900,14 @@ Evaluate Outputs
 Compute Rewards
         │
         ▼
-Update Q-Table
+Bellman Q-Update
         │
         ▼
-Save Learned Policy
+Decay Epsilon
+        │
+        ▼
+Save Q-Table
 ```
-
----
-
-## Expected Outcome
-
-The RL strategy aims to learn role assignments that maximize:
-
-```text
-Diagnosis Accuracy
-Treatment Quality
-Security Robustness
-```
-
-while adapting to:
-
-```text
-Case Difficulty
-Security Risk
-Attack Type
-```
-
-This enables security-aware dynamic orchestration rather than relying on fixed role mappings.
 
 ---
 
@@ -855,10 +919,10 @@ To demonstrate that security behavior emerges from the interaction between:
 Agent Identity + Role Context
 ```
 
-and that adaptive role assignment policies can improve both:
+and that adaptive role assignment policies (RL) can improve both:
 
 ```text
 Task Performance + Security Robustness
 ```
 
-compared to static role allocation methods.
+compared to static and other role allocation methods.
