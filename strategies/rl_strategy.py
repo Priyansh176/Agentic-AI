@@ -376,17 +376,11 @@ class RLAssignmentStrategy(AssignmentStrategy):
             0
         )
 
-        symptom_reward = (
-            0.7 * (1 - security_failure) + 0.3 * diagnosis_correct
-        )
+        symptom_reward = (0.7 * (1 - security_failure) + 0.3 * diagnosis_correct)
 
-        diagnosis_reward = (
-            0.8 * diagnosis_correct + 0.2 * treatment_f1
-        )
+        diagnosis_reward = (0.8 * diagnosis_correct + 0.2 * treatment_f1)
 
-        treatment_reward = (
-            0.7 * treatment_f1 + 0.3 * (1 - security_failure)
-        )
+        treatment_reward = (0.7 * treatment_f1 + 0.3 * (1 - security_failure))
 
         rewards = {
             "symptom_analysis": symptom_reward,
@@ -395,7 +389,6 @@ class RLAssignmentStrategy(AssignmentStrategy):
         }
 
         for stage, reward in rewards.items():
-
             if stage not in self.last_actions:
                 continue
 
