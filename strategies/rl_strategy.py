@@ -104,13 +104,7 @@ class RLAssignmentStrategy(AssignmentStrategy):
         )
 
         attack_type = (
-            case_data.get(
-                "security_scenario",
-                {}
-            ).get(
-                "attack_type",
-                "none"
-            )
+            case_data.get("security_scenario", {}).get("attack_type", "none")
         )
 
         base_state =  (
@@ -172,9 +166,7 @@ class RLAssignmentStrategy(AssignmentStrategy):
             table[state_key] = {
                 str(action): 0.0
                 for action in range(
-                    len(
-                        self.ROLE_PERMUTATIONS
-                    )
+                    len(self.ROLE_PERMUTATIONS)
                 )
             }
 
@@ -185,7 +177,6 @@ class RLAssignmentStrategy(AssignmentStrategy):
     ):
 
         state_key = str(state)
-
         q_values = self.q_tables[stage_name][state_key]
 
         if random.random() < self.epsilon:
@@ -247,32 +238,20 @@ class RLAssignmentStrategy(AssignmentStrategy):
 
         action = int(action)
 
-        permutation = (
-            self.ROLE_PERMUTATIONS[
-                action
-            ]
-        )
+        permutation = (self.ROLE_PERMUTATIONS[action])
 
-        roles = self.ROLE_MAP[
-            stage_name
-        ]
+        roles = self.ROLE_MAP[stage_name]
 
         assignment = {}
 
-        for role_index, role in enumerate(
-            roles
-        ):
-
+        for role_index, role in enumerate(roles):
             model_index = permutation[role_index]
-
             assignment[role] = available_models[model_index]
 
         self.last_states[stage_name] = state
 
         print(f"\n[RL] {stage_name}")       #
-
         print(f"State: {state}")
-
         print(f"Action: {action}")          #
 
         return assignment
@@ -287,16 +266,8 @@ class RLAssignmentStrategy(AssignmentStrategy):
             exist_ok=True
         )
 
-        with open(
-            path,
-            "w"
-        ) as f:
-
-            json.dump(
-                self.q_tables,
-                f,
-                indent=2
-            )
+        with open(path, "w") as f:
+            json.dump(self.q_tables, f, indent=2)
 
     def load_q_table(
         self,
@@ -306,11 +277,7 @@ class RLAssignmentStrategy(AssignmentStrategy):
         if not Path(path).exists():
             return
 
-        with open(
-            path,
-            "r"
-        ) as f:
-
+        with open(path, "r") as f:
             self.q_tables = json.load(f)
 
     def update_q_table(
@@ -320,17 +287,10 @@ class RLAssignmentStrategy(AssignmentStrategy):
     ):
 
         state = self.last_states[stage_name]
-
         action = self.last_actions[stage_name]
-
         state_key = str(state)
-
         current_q = self.q_tables[stage_name][state_key][str(action)]
-
-        updated_q = current_q + (
-            self.alpha * (reward - current_q)
-        )
-
+        updated_q = current_q + (self.alpha * (reward - current_q))
         self.q_tables[stage_name][state_key][str(action)] = updated_q
 
     def learn(
@@ -339,7 +299,7 @@ class RLAssignmentStrategy(AssignmentStrategy):
     ):
 
         reward = (
-            0.4 * metrics.get("diagnosis_weighted_score",0.0) + 0.3 * metrics.get("treatment_f1_score", 0.0) + 0.3 *(1 - metrics.get("security_failure", 0))
+            0.4 * metrics.get("diagnosis_weighted_score",0.0) + 0.3 * metrics.get("treatment_f1_score", 0.0) + 0.3 *(1 - metrics.get("security_score", 0))
         )
 
         for stage in [
@@ -360,27 +320,29 @@ class RLAssignmentStrategy(AssignmentStrategy):
         return reward
     
     def learn_stage_rewards(self, metrics):
-
-        diagnosis_correct = metrics.get(
+        diagnosis_weighted_score = metrics.get(
             "diagnosis_weighted_score",
-            0
+            0.0
         )
 
-        treatment_f1 = metrics.get(
-            "treatment_f1_score",
+        diagnosis_category_match = metrics.get(
+            "diagnosis_category_match",
+            0.0
+        )
+
+        clinical_f1 = metrics.get(
+            "clinical_f1",
             metrics.get("treatment_f1", 0.0)
         )
 
-        security_failure = metrics.get(
-            "security_failure",
-            0
+        security_score = metrics.get(
+            "security_score",
+            0.0
         )
 
-        symptom_reward = (0.7 * (1 - security_failure) + 0.3 * diagnosis_correct)
-
-        diagnosis_reward = (0.8 * diagnosis_correct + 0.2 * treatment_f1)
-
-        treatment_reward = (0.7 * treatment_f1 + 0.3 * (1 - security_failure))
+        symptom_reward = (0.5 * security_score + 0.3 * diagnosis_weighted_score + 0.2 * diagnosis_category_match)
+        diagnosis_reward = (0.8 * diagnosis_weighted_score + 0.2 * diagnosis_category_match)
+        treatment_reward = (0.6 * clinical_f1 + 0.2 * security_score + 0.2 * diagnosis_weighted_score)
 
         rewards = {
             "symptom_analysis": symptom_reward,
@@ -455,32 +417,31 @@ class RLAssignmentStrategy(AssignmentStrategy):
 
         diagnosis_weighted_score = metrics.get(
             "diagnosis_weighted_score",
-            0
+            0.0
         )
 
-        treatment_f1 = metrics.get(
-            "treatment_f1_score",
+        diagnosis_category_match = metrics.get(
+            "diagnosis_category_match",
+            0.0
+        )
+
+        clinical_f1 = metrics.get(
+            "clinical_f1",
             metrics.get("treatment_f1", 0.0)
         )
 
-        security_failure = metrics.get(
-            "security_failure",
-            0
+        security_score = metrics.get(
+            "security_score",
+            0.0
         )
 
-        print(metrics)      #
+        symptom_reward = (0.5 * security_score + 0.3 * diagnosis_weighted_score + 0.2 * diagnosis_category_match)
+        diagnosis_reward = (0.6 * diagnosis_weighted_score + 0.1 * diagnosis_category_match + 0.3 * security_score)
+        treatment_reward = (0.6 * clinical_f1 + 0.2 * security_score + 0.2 * diagnosis_weighted_score)
 
-        symptom_reward = (
-            0.7 * (1-security_failure) + 0.3 * diagnosis_weighted_score
-        )
-
-        diagnosis_reward = (
-            0.8 * diagnosis_weighted_score + 0.2 * treatment_f1
-        )
-
-        treatment_reward = (
-            0.7 * treatment_f1 + 0.3 * (1-security_failure)
-        )
+        print(f"Symptom Reward={symptom_reward:.3f}")       #
+        print(f"Diagnosis Reward={diagnosis_reward:.3f}")
+        print(f"Treatment Reward={treatment_reward:.3f}")   #
 
         s1 = self.episode[0]
         s2 = self.episode[1]
