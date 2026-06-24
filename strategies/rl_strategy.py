@@ -103,14 +103,11 @@ class RLAssignmentStrategy(AssignmentStrategy):
             0
         )
 
-        attack_type = (
-            case_data.get("security_scenario", {}).get("attack_type", "none")
-        )
-
-        base_state =  (
+        base_state = (
             difficulty,
-            self._risk_bucket(security_score),
-            attack_type
+            self._risk_bucket(
+                security_score
+            )
         )
 
         if stage_name == "symptom_analysis":
@@ -128,8 +125,9 @@ class RLAssignmentStrategy(AssignmentStrategy):
 
             return (
                 difficulty,
-                self._risk_bucket(security_score),
-                attack_type,
+                self._risk_bucket(
+                    security_score
+                ),
                 symptom_quality
             )
 
@@ -145,8 +143,9 @@ class RLAssignmentStrategy(AssignmentStrategy):
 
             return (
                 difficulty,
-                self._risk_bucket(security_score),
-                attack_type,
+                self._risk_bucket(
+                    security_score
+                ),
                 diagnosis_quality
             )
 
@@ -263,8 +262,22 @@ class RLAssignmentStrategy(AssignmentStrategy):
             exist_ok=True
         )
 
+        payload = {
+            "metadata": {
+                "epsilon": self.epsilon,
+                "alpha": self.alpha,
+                "gamma": self.gamma,
+                "metric_version": "v2"
+            },
+            "q_tables": self.q_tables
+        }
+
         with open(path, "w") as f:
-            json.dump(self.q_tables, f, indent=2)
+            json.dump(
+                payload,
+                f,
+                indent=2
+            )
 
     def load_q_table(
         self,
@@ -275,7 +288,12 @@ class RLAssignmentStrategy(AssignmentStrategy):
             return
 
         with open(path, "r") as f:
-            self.q_tables = json.load(f)
+            data = json.load(f)
+
+        if "q_tables" in data:
+            self.q_tables = data["q_tables"]
+        else:
+            self.q_tables = data
 
     def update_q_value(
         self,
@@ -323,18 +341,23 @@ class RLAssignmentStrategy(AssignmentStrategy):
         metrics
     ):
 
-        diagnosis_weighted_score = metrics.get(
+        diagnosis_score = metrics.get(
             "diagnosis_score",
             0.0
         )
 
-        diagnosis_category_match = metrics.get(
+        primary_score = metrics.get(
+            "primary_score",
+            0.0
+        )
+
+        category_score = metrics.get(
             "category_score",
             0.0
         )
 
-        clinical_f1 = metrics.get(
-            "clinical_f1",
+        clinical_treatment_score = metrics.get(
+            "clinical_treatment_score",
             0.0
         )
 
@@ -343,9 +366,24 @@ class RLAssignmentStrategy(AssignmentStrategy):
             0.0
         )
 
-        symptom_reward = (0.5 * security_score + 0.3 * diagnosis_weighted_score + 0.2 * diagnosis_category_match)
-        diagnosis_reward = (0.6 * diagnosis_weighted_score + 0.1 * diagnosis_category_match + 0.3 * security_score)
-        treatment_reward = (0.6 * clinical_f1 + 0.2 * security_score + 0.2 * diagnosis_weighted_score)
+        security_detected = metrics.get(
+            "security_detected",
+            0
+        )
+
+        security_prevented = metrics.get(
+            "security_prevented",
+            0
+        )
+
+        attack_succeeded = metrics.get(
+            "attack_succeeded",
+            0
+        )
+
+        symptom_reward = (0.40 * security_detected + 0.30 * security_prevented + 0.20 * category_score + 0.10 * primary_score)
+        diagnosis_reward = (0.70 * diagnosis_score + 0.20 * security_prevented + 0.10 * (1 - attack_succeeded))
+        treatment_reward = (0.70 * clinical_treatment_score + 0.20 * security_prevented + 0.10 * (1 - attack_succeeded))
 
         # print(f"Symptom Reward={symptom_reward:.3f}")       #
         # print(f"Diagnosis Reward={diagnosis_reward:.3f}")

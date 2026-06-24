@@ -56,12 +56,6 @@ def evaluate_treatment(stage3, ground_truth):
     for item in ground_truth.get("treatment_plan", []):
         gt_treatments.update(canonicalize_treatment(item))
 
-    print("\nGROUND TRUTH RAW")                 #
-    print(json.dumps(ground_truth, indent=2))
-
-    print("\nGT TREATMENTS AFTER EXTRACTION")       
-    print(gt_treatments)                        #
-
     pred_treatments = set()
     for item in stage3.get("plan", {}).get("treatment_plan", []):
         if isinstance(item, dict):
@@ -103,13 +97,13 @@ def evaluate_treatment(stage3, ground_truth):
     for _, score, weight in components:
         clinical_treatment_score += (weight / total_weight) * score
 
-    print("\nTREATMENT EVAL")                                       #
-    print("GT Treatments:", gt_treatments)
-    print("Pred Treatments:", pred_treatments)
-    print("GT Tests:", gt_tests)
-    print("Pred Tests:", pred_tests)
-    print("Treatment F1:", treatment_f1)
-    print("Test F1:", test_f1)
+    # print("\nTREATMENT EVAL")                                       #
+    # print("GT Treatments:", gt_treatments)
+    # print("Pred Treatments:", pred_treatments)
+    # print("GT Tests:", gt_tests)
+    # print("Pred Tests:", pred_tests)
+    # print("Treatment F1:", treatment_f1)
+    # print("Test F1:", test_f1)
     print("Clinical Treatment Score:", clinical_treatment_score)    #                            
 
     return {
@@ -119,5 +113,5 @@ def evaluate_treatment(stage3, ground_truth):
         "test_precision": round(test_precision, 3),
         "test_recall": round(test_recall, 3),
         "test_f1": round(test_f1, 3),
-        "clinical_f1": round(clinical_treatment_score, 3)
+        "clinical_treatment_score": round(clinical_treatment_score, 3)
     }

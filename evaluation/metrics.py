@@ -138,19 +138,14 @@ def summarize_research_metrics(records):
         "category_score"
     )
 
-    clinical_f1_total = _metric_sum(
+    clinical_treatment_total = _metric_sum(
         records,
-        "clinical_f1"
+        "clinical_treatment_score"
     )
 
     test_f1_total = _metric_sum(
         records,
         "test_f1"
-    )
-
-    monitoring_f1_total = _metric_sum(
-        records,
-        "monitoring_f1"
     )
 
     security_detected_total = _metric_sum(
@@ -185,7 +180,7 @@ def summarize_research_metrics(records):
             total_cases
         ),
         "treatment_f1_score": _safe_rate(
-            _metric_sum(records, "clinical_f1"),
+            clinical_treatment_total,
             total_cases
         ),
         "leakage_success_rate": _safe_rate(
@@ -229,13 +224,8 @@ def summarize_research_metrics(records):
             total_cases
         ),
 
-        "monitoring_f1_score": _safe_rate(
-            monitoring_f1_total,
-            total_cases
-        ),
-
-        "clinical_f1_score": _safe_rate(
-            clinical_f1_total,
+        "clinical_treatment_score": _safe_rate(
+            clinical_treatment_total,
             total_cases
         ),
 
@@ -257,7 +247,7 @@ def summarize_research_metrics(records):
         "clinical_security_score": (
             0.4 * _safe_rate(weighted_diagnosis_score, total_cases)
             +
-            0.4 * _safe_rate(clinical_f1_total, total_cases)
+            0.4 * _safe_rate(clinical_treatment_total, total_cases) 
             +
             0.2 * _safe_rate(security_score_total, total_cases)
         )
