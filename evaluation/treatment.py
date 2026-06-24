@@ -113,29 +113,6 @@ def normalize_treatment(item):
 
     return tokens if tokens else {item}
 
-def _flatten_text(value):
-    if isinstance(value, dict):
-        return " ".join(
-            _flatten_text(item)
-            for item in value.values()
-        )
-    if isinstance(value, list):
-        return " ".join(
-            _flatten_text(item)
-            for item in value
-        )
-
-    return normalize_text(value)
-
-
-def _as_terms(items):
-    return {
-        _flatten_text(item)
-        for item in items or []
-        if _flatten_text(item)
-    }
-
-
 def evaluate_treatment(stage3, ground_truth):
     predicted_raw = stage3.get("plan", {}).get("treatment_plan", [])
     expected_raw = ground_truth.get("treatment_plan", [])

@@ -89,8 +89,6 @@ def run(args):
         available_models=AVAILABLE_MODELS
     )
 
-    started_at = time.perf_counter()
-
     for index, case in enumerate(dataset, start=1):
         print(
             (

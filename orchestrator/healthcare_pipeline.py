@@ -476,9 +476,3 @@ Patient Context:
             )
 
         return usage
-    
-    def update_stage_output(
-        self,
-        output
-    ):
-        self.previous_stage_output = output

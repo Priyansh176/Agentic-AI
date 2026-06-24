@@ -94,15 +94,6 @@ class GreedyAssignmentStrategy(
 
         return assignment
 
-    def _update_average(
-        self,
-        old_value,
-        count,
-        new_value
-    ):
-
-        return (old_value * count + new_value) / (count + 1)
-
     def update_profiles(
         self,
         result,

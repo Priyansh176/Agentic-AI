@@ -72,10 +72,3 @@ class FixedAssignmentStrategy(
             )
 
         return dict(assignments)
-    
-    def update_profiles(
-        self,
-        result,
-        metrics
-    ):
-        pass
