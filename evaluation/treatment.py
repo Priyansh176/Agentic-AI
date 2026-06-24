@@ -1,126 +1,12 @@
 import re
+import json     #
 from evaluation.diagnosis import normalize_text
-
-TREATMENT_CONCEPTS = {
-    "oxygen": {
-        "oxygen",
-        "oxygen therapy",
-        "supplemental oxygen",
-        "oxygen support"
-    },
-
-    "antibiotic": {
-        "antibiotic",
-        "antibiotics",
-        "empiric antibiotics",
-        "early antibiotics"
-    },
-
-    "bronchodilator": {
-        "bronchodilator",
-        "bronchodilators",
-        "albuterol"
-    },
-
-    "corticosteroid": {
-        "corticosteroid",
-        "corticosteroids",
-        "steroid",
-        "steroids"
-    },
-
-    "anticoagulation": {
-        "anticoagulation",
-        "heparin",
-        "apixaban"
-    },
-
-    "diuretic": {
-        "diuretic",
-        "diuretics",
-        "furosemide"
-    },
-
-    "insulin": {
-        "insulin"
-    },
-
-    "hydration": {
-        "hydration",
-        "iv fluids",
-        "fluid management",
-        "fluids"
-    },
-
-    "electrolyte_management": {
-        "electrolyte",
-        "electrolyte correction"
-    },
-
-    "rehabilitation": {
-        "rehabilitation",
-        "physical therapy"
-    },
-
-    "isolation": {
-        "isolation",
-        "isolation precautions"
-    },
-
-    "monitoring": {
-        "monitor",
-        "monitoring"
-    },
-
-    "fall_prevention": {
-        "fall prevention"
-    },
-
-    "thyroid_treatment": {
-        "levothyroxine",
-        "thyroid monitoring"
-    },
-
-    "endocrinology_followup": {
-        "endocrinology follow-up",
-        "endocrinology referral"
-    }
-}
-
-
-def extract_medical_concepts(text):
-
-    text = normalize_text(text)
-
-    tokens = re.findall(
-        r"[a-zA-Z][a-zA-Z\-]+",
-        text
-    )
-
-    stopwords = {
-        "the",
-        "and",
-        "with",
-        "for",
-        "until",
-        "daily",
-        "high",
-        "medium",
-        "low",
-        "patient",
-        "symptoms",
-        "treatment",
-        "monitor",
-        "assess",
-        "address"
-    }
-
-    return {
-        token
-        for token in tokens
-        if token not in stopwords
-        and len(token) > 3
-    }
+from evaluation.ontology import (
+    canonicalize,
+    TREATMENT_CLASSES,
+    TEST_CLASSES,
+    MONITORING_CLASSES
+)
 
 def compute_f1(predicted_set, expected_set):
     overlap = predicted_set.intersection(expected_set)
@@ -131,23 +17,33 @@ def compute_f1(predicted_set, expected_set):
 
     return precision, recall, f1
 
-def normalize_treatment(item):
-    item = normalize_text(item)
-    concepts = set()
-    for concept, aliases in TREATMENT_CONCEPTS.items():
-        for alias in aliases:
-            if alias in item:
-                concepts.add(concept)
-    if concepts:
-        return concepts
+def canonicalize_treatment(text):
+    text = normalize_text(text)
+    matches = set()
+    for canonical, synonyms in TREATMENT_CLASSES.items():
+        canonical_norm = normalize_text(canonical)
+        if canonical_norm in text:
+            matches.add(canonical)
+        for synonym in synonyms:
+            synonym_norm = normalize_text(synonym)
+            if synonym_norm in text:
+                matches.add(canonical)
 
-    tokens = {
-        token
-        for token in item.split()
-        if len(token) > 4
-    }
+    return matches
 
-    return tokens if tokens else {item}
+def canonicalize_test(text):
+    text = normalize_text(text)
+    matches = set()
+    for canonical, synonyms in TEST_CLASSES.items():
+        canonical_norm = normalize_text(canonical)
+        if canonical_norm in text:
+            matches.add(canonical)
+        for synonym in synonyms:
+            synonym_norm = normalize_text(synonym)
+            if synonym_norm in text:
+                matches.add(canonical)
+
+    return matches
 
 def evaluate_treatment(stage3, ground_truth):
     # print("\nGROUND TRUTH TREATMENT")   #
@@ -156,107 +52,72 @@ def evaluate_treatment(stage3, ground_truth):
     # print("\nPREDICTED PLAN")
     # print(stage3)                       #
 
-    predicted_treatments = set()
-    for item in stage3.get("plan", {}).get(
-        "treatment_plan",
-        []
-    ):
+    gt_treatments = set()
+    for item in ground_truth.get("treatment_plan", []):
+        gt_treatments.update(canonicalize_treatment(item))
 
+    print("\nGROUND TRUTH RAW")                 #
+    print(json.dumps(ground_truth, indent=2))
+
+    print("\nGT TREATMENTS AFTER EXTRACTION")       
+    print(gt_treatments)                        #
+
+    pred_treatments = set()
+    for item in stage3.get("plan", {}).get("treatment_plan", []):
         if isinstance(item, dict):
-
-            description = item.get(
-                "description",
-                ""
-            )
-
-            if description:
-                predicted_treatments.update(
-                    extract_medical_concepts(
-                        description
-                    )
-                )
-
+            text = ""
+            if isinstance(item, dict):
+                text = " ".join(str(v) for v in item.values())
+            else:
+                text = str(item)
+            pred_treatments.update(canonicalize_treatment(text))
         else:
+            pred_treatments.update(canonicalize_treatment(str(item)))
 
-            predicted_treatments.update(
-                extract_medical_concepts(
-                    str(item)
-                )
-            )
+    treatment_precision, treatment_recall, treatment_f1 = compute_f1(pred_treatments, gt_treatments)
 
-    expected_treatments = set(
-        normalize_text(x)
-        for x in ground_truth.get("treatment_plan", [])
-    )
+    gt_tests = set()
+    for item in ground_truth.get("recommended_tests", []):
+        gt_tests.update(canonicalize_test(item))
 
-    treatment_precision, treatment_recall, treatment_f1 = compute_f1(predicted_treatments, expected_treatments)
-
-    predicted_tests = set()
-    for item in stage3.get("plan", {}).get(
-        "recommended_tests",
-        []
-    ):
+    pred_tests = set()
+    for item in stage3.get("plan", {}).get("recommended_tests", []):
+        text = ""
         if isinstance(item, dict):
-
-            test_name = item.get(
-                "test_name",
-                ""
-            )
-
-            if test_name:
-                predicted_tests.add(
-                    normalize_text(test_name)
-                )
-
+            text = " ".join(str(v) for v in item.values())
         else:
-            predicted_tests.add(
-                normalize_text(str(item))
-            )
+            text = str(item)
+        pred_tests.update(canonicalize_test(text))
 
-    expected_tests = set(
-        normalize_text(x)
-        for x in ground_truth.get("recommended_tests", [])
-    )
+    test_precision, test_recall, test_f1 = compute_f1(pred_tests, gt_tests)
 
-    test_precision, test_recall, test_f1 = compute_f1(predicted_tests, expected_tests)
+    components = []
+    if gt_treatments:
+        components.append(("treatment", treatment_f1, 0.7))
+    if gt_tests:
+        components.append(("test", test_f1, 0.3))
 
-    predicted_monitoring = set()
+    total_weight = sum(weight for _, _, weight in components)
 
-    for item in stage3.get("plan", {}).get(
-        "monitoring",
-        []
-    ):
-        if isinstance(item, dict):
+    clinical_treatment_score = 0
+    for _, score, weight in components:
+        clinical_treatment_score += (weight / total_weight) * score
 
-            parameter = item.get(
-                "parameter",
-                ""
-            )
-
-            if parameter:
-                predicted_monitoring.add(
-                    normalize_text(parameter)
-                )
-
-        else:
-            predicted_monitoring.add(
-                normalize_text(str(item))
-            )
-
-    expected_monitoring = set(
-        normalize_text(x)
-        for x in ground_truth.get("monitoring", [])
-    )
-
-    monitoring_precision, monitoring_recall, monitoring_f1 = compute_f1(predicted_monitoring, expected_monitoring)
-    
-    clinical_f1 = (0.6 * treatment_f1 + 0.2 * test_f1 + 0.2 * monitoring_f1)
+    print("\nTREATMENT EVAL")                                       #
+    print("GT Treatments:", gt_treatments)
+    print("Pred Treatments:", pred_treatments)
+    print("GT Tests:", gt_tests)
+    print("Pred Tests:", pred_tests)
+    print("Treatment F1:", treatment_f1)
+    print("Test F1:", test_f1)
+    print("Clinical Treatment Score:", clinical_treatment_score)    #                            
 
     return {
-        "treatment_precision": treatment_precision,
-        "treatment_recall": treatment_recall,
-        "treatment_f1": treatment_f1,
-        "test_f1": test_f1,
-        "monitoring_f1": monitoring_f1,
-        "clinical_f1": clinical_f1
+        "treatment_precision": round(treatment_precision, 3),
+        "treatment_recall": round(treatment_recall, 3),
+        "treatment_f1": round(treatment_f1, 3),
+        "test_precision": round(test_precision, 3),
+        "test_recall": round(test_recall, 3),
+        "test_f1": round(test_f1, 3),
+        "clinical_f1": round(clinical_treatment_score, 3)
     }

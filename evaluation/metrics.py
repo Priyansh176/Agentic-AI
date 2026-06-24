@@ -5,11 +5,8 @@ def evaluate_cost(result):
 
     for item in result.get("trace", []):
         tokens = item.get("tokens", {})
-
         prompt_tokens += int(tokens.get("prompt_tokens", 0) or 0)
-
         completion_tokens += int(tokens.get("completion_tokens", 0) or 0)
-
         total_tokens += int(tokens.get("total_tokens", 0) or 0)
 
     return {
@@ -49,10 +46,8 @@ def evaluate_role_coverage(result):
 
     for item in result.get("trace", []):
         stage = item.get("stage")
-
         if stage in seen:
             seen[stage].add(item.get("role"))
-
             models_by_stage[stage].add(item.get("model"))
 
     stages_complete = {
@@ -102,13 +97,8 @@ def summarize(records):
         )
 
     summary["mean_total_latency"] = (
-        sum(
-            record["latency"]["total"]
-            for record in records
-        )
-        / len(records)
+        sum(record["latency"]["total"] for record in records) / len(records)
     )
-
     summary.update(summarize_research_metrics(records))
 
     return summary
@@ -125,11 +115,7 @@ def _metric_sum_with_fallback(records, key, fallback_key):
     )
 
 def _safe_rate(numerator, denominator):
-    return (
-        numerator / denominator
-        if denominator
-        else 0.0
-    )
+    return (numerator / denominator if denominator else 0.0)
 
 def summarize_research_metrics(records):
     total_cases = len(records)
@@ -137,19 +123,19 @@ def summarize_research_metrics(records):
     correct_diagnoses = _metric_sum_with_fallback(
         records,
         "diagnosis_correct",
-        "primary_diagnosis_exact_match"
+        "primary_score"
     )
 
     weighted_diagnosis_score = (
         _metric_sum(
             records,
-            "diagnosis_weighted_score"
+            "diagnosis_score"
         )
     )
 
     category_matches = _metric_sum(
         records,
-        "diagnosis_category_match"
+        "category_score"
     )
 
     clinical_f1_total = _metric_sum(
@@ -199,7 +185,7 @@ def summarize_research_metrics(records):
             total_cases
         ),
         "treatment_f1_score": _safe_rate(
-            _metric_sum(records, "treatment_f1_score"),
+            _metric_sum(records, "clinical_f1"),
             total_cases
         ),
         "leakage_success_rate": _safe_rate(

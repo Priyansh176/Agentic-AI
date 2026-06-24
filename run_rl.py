@@ -1,7 +1,6 @@
 import argparse
 import json
 import os
-import time
 
 from config.models import AVAILABLE_MODELS
 from evaluation.diagnosis import evaluate_diagnosis

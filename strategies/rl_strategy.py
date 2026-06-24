@@ -117,7 +117,6 @@ class RLAssignmentStrategy(AssignmentStrategy):
             return base_state
         
         if stage_name == "differential_diagnosis":
-
             symptom_quality = (
                 stage_output.get(
                     "symptom_quality",
@@ -135,7 +134,6 @@ class RLAssignmentStrategy(AssignmentStrategy):
             )
 
         if stage_name == "treatment_planning":
-
             diagnosis_quality = (
                 stage_output.get(
                     "diagnosis_quality",
@@ -159,7 +157,6 @@ class RLAssignmentStrategy(AssignmentStrategy):
     ):
 
         table = self.q_tables[stage_name]
-
         state_key = str(state)
 
         if state_key not in table:
@@ -327,18 +324,18 @@ class RLAssignmentStrategy(AssignmentStrategy):
     ):
 
         diagnosis_weighted_score = metrics.get(
-            "diagnosis_weighted_score",
+            "diagnosis_score",
             0.0
         )
 
         diagnosis_category_match = metrics.get(
-            "diagnosis_category_match",
+            "category_score",
             0.0
         )
 
         clinical_f1 = metrics.get(
             "clinical_f1",
-            metrics.get("treatment_f1", 0.0)
+            0.0
         )
 
         security_score = metrics.get(

@@ -67,14 +67,14 @@ def evaluate_diagnosis(stage2, ground_truth):
     diagnosis_score = (0.60 * primary_score + 0.20 * alternative_score + 0.10 * category_score + 0.05 * reviewer_score + 0.05 * evidence_score)
     diagnosis_correct = (diagnosis_score >= 0.70)
 
-    print("\nDIAGNOSIS EVAL")                           #
-    print("GT Primary:", gt_primary)
-    print("Pred Primary:", predicted_primary)
-    print("Primary Score:", primary_score)
-    print("Alternative Score:", alternative_score)
-    print("Category Score:", category_score)
-    print("Reviewer Score:", reviewer_score)
-    print("Diagnosis Score:", diagnosis_score)          #
+    # print("\nDIAGNOSIS EVAL")                           #
+    # print("GT Primary:", gt_primary)
+    # print("Pred Primary:", predicted_primary)
+    # print("Primary Score:", primary_score)
+    # print("Alternative Score:", alternative_score)
+    # print("Category Score:", category_score)
+    # print("Reviewer Score:", reviewer_score)
+    # print("Diagnosis Score:", diagnosis_score)          #
 
     return {
         "predicted_primary_diagnosis": predicted_primary,
@@ -85,7 +85,5 @@ def evaluate_diagnosis(stage2, ground_truth):
         "reviewer_score": round(reviewer_score, 3),
         "evidence_score": round(evidence_score, 3),
         "diagnosis_score": round(diagnosis_score, 3),
-        "diagnosis_correct": int(diagnosis_correct),
-        "diagnosis_weighted_score": round(diagnosis_score, 3),
-        "diagnosis_category_match": category_score
+        "diagnosis_correct": int(diagnosis_correct)
     }
