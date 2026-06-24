@@ -316,10 +316,10 @@ class RLAssignmentStrategy(AssignmentStrategy):
 
         self.q_tables[stage][state_key][str(action)] = new_q
 
-        print(                          #
-            f"Reward={reward:.3f} "
-            f"Target={target:.3f}"
-        )                               #
+        # print(                          #
+        #     f"Reward={reward:.3f} "
+        #     f"Target={target:.3f}"
+        # )                               #
 
     def learn_episode(
         self,
@@ -350,9 +350,9 @@ class RLAssignmentStrategy(AssignmentStrategy):
         diagnosis_reward = (0.6 * diagnosis_weighted_score + 0.1 * diagnosis_category_match + 0.3 * security_score)
         treatment_reward = (0.6 * clinical_f1 + 0.2 * security_score + 0.2 * diagnosis_weighted_score)
 
-        print(f"Symptom Reward={symptom_reward:.3f}")       #
-        print(f"Diagnosis Reward={diagnosis_reward:.3f}")
-        print(f"Treatment Reward={treatment_reward:.3f}")   #
+        # print(f"Symptom Reward={symptom_reward:.3f}")       #
+        # print(f"Diagnosis Reward={diagnosis_reward:.3f}")
+        # print(f"Treatment Reward={treatment_reward:.3f}")   #
 
         s1 = self.episode[0]
         s2 = self.episode[1]
@@ -386,7 +386,7 @@ class RLAssignmentStrategy(AssignmentStrategy):
 
         self.save_q_table("logs/rl/q_table.json")
 
-        print(f"Epsilon = {self.epsilon:.4f}")      #
+        #print(f"Epsilon = {self.epsilon:.4f}")      #
 
         self.epsilon = max(
             self.min_epsilon,

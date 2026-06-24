@@ -1,3 +1,4 @@
+import re
 from evaluation.diagnosis import normalize_text
 
 TREATMENT_CONCEPTS = {
@@ -86,6 +87,41 @@ TREATMENT_CONCEPTS = {
     }
 }
 
+
+def extract_medical_concepts(text):
+
+    text = normalize_text(text)
+
+    tokens = re.findall(
+        r"[a-zA-Z][a-zA-Z\-]+",
+        text
+    )
+
+    stopwords = {
+        "the",
+        "and",
+        "with",
+        "for",
+        "until",
+        "daily",
+        "high",
+        "medium",
+        "low",
+        "patient",
+        "symptoms",
+        "treatment",
+        "monitor",
+        "assess",
+        "address"
+    }
+
+    return {
+        token
+        for token in tokens
+        if token not in stopwords
+        and len(token) > 3
+    }
+
 def compute_f1(predicted_set, expected_set):
     overlap = predicted_set.intersection(expected_set)
 
@@ -114,23 +150,68 @@ def normalize_treatment(item):
     return tokens if tokens else {item}
 
 def evaluate_treatment(stage3, ground_truth):
-    predicted_raw = stage3.get("plan", {}).get("treatment_plan", [])
-    expected_raw = ground_truth.get("treatment_plan", [])
+    # print("\nGROUND TRUTH TREATMENT")   #
+    # print(ground_truth)
 
-    predicted = set()
-    for item in predicted_raw:
-        predicted.update(normalize_treatment(item))
+    # print("\nPREDICTED PLAN")
+    # print(stage3)                       #
 
-    expected = set()
-    for item in expected_raw:
-        expected.update(normalize_treatment(item))
+    predicted_treatments = set()
+    for item in stage3.get("plan", {}).get(
+        "treatment_plan",
+        []
+    ):
 
-    treatment_precision, treatment_recall, treatment_f1 = compute_f1(predicted, expected)
+        if isinstance(item, dict):
 
-    predicted_tests = set(
+            description = item.get(
+                "description",
+                ""
+            )
+
+            if description:
+                predicted_treatments.update(
+                    extract_medical_concepts(
+                        description
+                    )
+                )
+
+        else:
+
+            predicted_treatments.update(
+                extract_medical_concepts(
+                    str(item)
+                )
+            )
+
+    expected_treatments = set(
         normalize_text(x)
-        for x in stage3.get("recommended_tests", [])
+        for x in ground_truth.get("treatment_plan", [])
     )
+
+    treatment_precision, treatment_recall, treatment_f1 = compute_f1(predicted_treatments, expected_treatments)
+
+    predicted_tests = set()
+    for item in stage3.get("plan", {}).get(
+        "recommended_tests",
+        []
+    ):
+        if isinstance(item, dict):
+
+            test_name = item.get(
+                "test_name",
+                ""
+            )
+
+            if test_name:
+                predicted_tests.add(
+                    normalize_text(test_name)
+                )
+
+        else:
+            predicted_tests.add(
+                normalize_text(str(item))
+            )
 
     expected_tests = set(
         normalize_text(x)
@@ -139,10 +220,28 @@ def evaluate_treatment(stage3, ground_truth):
 
     test_precision, test_recall, test_f1 = compute_f1(predicted_tests, expected_tests)
 
-    predicted_monitoring = set(
-        normalize_text(x)
-        for x in stage3.get("monitoring", [])
-    )
+    predicted_monitoring = set()
+
+    for item in stage3.get("plan", {}).get(
+        "monitoring",
+        []
+    ):
+        if isinstance(item, dict):
+
+            parameter = item.get(
+                "parameter",
+                ""
+            )
+
+            if parameter:
+                predicted_monitoring.add(
+                    normalize_text(parameter)
+                )
+
+        else:
+            predicted_monitoring.add(
+                normalize_text(str(item))
+            )
 
     expected_monitoring = set(
         normalize_text(x)
@@ -150,7 +249,7 @@ def evaluate_treatment(stage3, ground_truth):
     )
 
     monitoring_precision, monitoring_recall, monitoring_f1 = compute_f1(predicted_monitoring, expected_monitoring)
-
+    
     clinical_f1 = (0.6 * treatment_f1 + 0.2 * test_f1 + 0.2 * monitoring_f1)
 
     return {

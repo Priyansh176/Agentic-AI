@@ -1,134 +1,91 @@
-DIAGNOSIS_SYNONYMS = {
-    "community acquired pneumonia": {
-        "community acquired pneumonia",
-        "cap",
-        "pneumonia",
-        "bacterial pneumonia",
-        "lung infection",
-        "lower respiratory tract infection"
-    },
+import re
+from evaluation.ontology import (
+    canonicalize,
+    get_disease_category,
+    DIAGNOSIS_SYNONYMS,
+    DIAGNOSIS_MAP
+)
+from rapidfuzz import fuzz
 
-    "copd exacerbation": {
-        "copd exacerbation",
-        "copd flare",
-        "acute copd",
-        "chronic obstructive pulmonary disease exacerbation"
-    },
+def normalize_text(text):
+    if text is None:
+        return ""
 
-    "deep vein thrombosis": {
-        "deep vein thrombosis",
-        "dvt"
-    },
+    text = str(text).lower().strip()
+    text = re.sub(r"[^a-z0-9\s]", " ", text)
+    text = re.sub(r"\s+", " ", text)
 
-    "chronic kidney disease": {
-        "chronic kidney disease",
-        "ckd"
-    },
-
-    "diabetic ketoacidosis": {
-        "diabetic ketoacidosis",
-        "dka"
-    },
-
-    "heart failure exacerbation": {
-        "heart failure exacerbation",
-        "heart failure",
-        "acute heart failure",
-        "congestive heart failure",
-        "chf",
-        "decompensated heart failure"
-    },
-    
-    "acute coronary syndrome": {
-        "acute coronary syndrome",
-        "acs",
-        "myocardial infarction",
-        "heart attack",
-        "stemi",
-        "nstemi",
-        "acute mi",
-        "coronary syndrome"
-    },
-
-    "atrial fibrillation": {
-        "atrial fibrillation",
-        "afib",
-        "a-fib",
-        "atrial fib",
-        "rapid afib"
-    },
-}
-
-DIAGNOSIS_CATEGORIES = {
-    "acute coronary syndrome": "cardiovascular",
-    "heart failure exacerbation": "cardiovascular",
-    "atrial fibrillation": "cardiovascular",
-    "community acquired pneumonia": "respiratory",
-    "copd exacerbation": "respiratory",
-    "deep vein thrombosis": "vascular",
-    "chronic kidney disease": "renal",
-    "diabetic ketoacidosis": "endocrine"
-}
-
-def canonical_diagnosis(text):
-    text = normalize_text(text)
-    for canonical, aliases in DIAGNOSIS_SYNONYMS.items():
-        if text in aliases:
-            return canonical
     return text
 
-def normalize_text(value):
-    return str(value or "").strip().lower()
+def diagnosis_match_score(predicted, expected):
+    predicted = canonicalize(predicted, DIAGNOSIS_SYNONYMS)
+    expected = canonicalize(expected, DIAGNOSIS_SYNONYMS)
+    if predicted == expected:
+        return 1.0
+
+    similarity = fuzz.token_sort_ratio(predicted, expected) / 100.0
+
+    return similarity
 
 def evaluate_diagnosis(stage2, ground_truth):
-    predicted = canonical_diagnosis(
-        stage2.get("primary", {}).get("primary_diagnosis","")
-    )
-
-    expected = canonical_diagnosis(
-        ground_truth.get("primary_diagnosis", "")
-    )
-
-    alternatives = [
-        canonical_diagnosis(item)
-        for item in ground_truth.get("alternative_diagnoses", [])
+    predicted_primary = canonicalize(stage2.get("primary", {}).get("primary_diagnosis", ""),DIAGNOSIS_SYNONYMS)
+    predicted_alternatives = [
+        canonicalize(item, DIAGNOSIS_SYNONYMS)
+        for item in stage2.get("alternatives", {}).get("alternative_diagnoses", [])
     ]
 
-    exact_match = int(predicted == expected)
+    gt_primary = canonicalize(ground_truth.get("primary_diagnosis", ""), DIAGNOSIS_SYNONYMS)
+    gt_alternatives = [
+        canonicalize(item, DIAGNOSIS_SYNONYMS)
+        for item in
+        ground_truth.get("alternative_diagnoses", [])
+    ]
 
-    alternative_match = int(predicted in alternatives)
+    primary_score = diagnosis_match_score(predicted_primary, gt_primary)
 
-    partial_match = int(
-        bool(predicted)
-        and (predicted in expected or expected in predicted)
-    )
+    alternative_score = 0.0
+    if gt_alternatives and predicted_alternatives:
+        scores = []
+        for gt_alt in gt_alternatives:
+            best_match = max(
+                diagnosis_match_score(pred_alt, gt_alt)
+                for pred_alt in predicted_alternatives
+            )
+            scores.append(best_match)
 
-    weighted_score = (
-        1.0
-        if exact_match
-        else 0.75
-        if partial_match
-        else 0.5
-        if alternative_match
-        else 0.0
-    )
+        alternative_score = (sum(scores) / len(scores))
+    if primary_score >= 0.95:
+        alternative_score = 1.0
 
-    predicted_category = DIAGNOSIS_CATEGORIES.get(predicted)
+    pred_category = get_disease_category(predicted_primary)
+    gt_category = get_disease_category(gt_primary)
 
-    expected_category = DIAGNOSIS_CATEGORIES.get(expected)
+    category_score = (1.0 if pred_category == gt_category else 0.0)
+    reviewer_score = (1.0 if stage2.get("review", {}).get("approved", False) else 0.0)
+    evidence_score = 0.0
 
-    category_match = int(
-        predicted_category == expected_category
-        and predicted_category is not None
-    )
+    diagnosis_score = (0.60 * primary_score + 0.20 * alternative_score + 0.10 * category_score + 0.05 * reviewer_score + 0.05 * evidence_score)
+    diagnosis_correct = (diagnosis_score >= 0.70)
+
+    print("\nDIAGNOSIS EVAL")                           #
+    print("GT Primary:", gt_primary)
+    print("Pred Primary:", predicted_primary)
+    print("Primary Score:", primary_score)
+    print("Alternative Score:", alternative_score)
+    print("Category Score:", category_score)
+    print("Reviewer Score:", reviewer_score)
+    print("Diagnosis Score:", diagnosis_score)          #
 
     return {
-        "predicted_primary_diagnosis": predicted,
-        "expected_primary_diagnosis": expected,
-        "diagnosis_correct": exact_match,
-        "primary_diagnosis_exact_match": exact_match,
-        "primary_diagnosis_partial_match": partial_match,
-        "predicted_is_ground_truth_alternative": alternative_match,
-        "diagnosis_weighted_score": weighted_score,
-        "diagnosis_category_match": category_match
+        "predicted_primary_diagnosis": predicted_primary,
+        "expected_primary_diagnosis": gt_primary,
+        "primary_score": round(primary_score, 3),
+        "alternative_score": round(alternative_score, 3),
+        "category_score": round(category_score, 3),
+        "reviewer_score": round(reviewer_score, 3),
+        "evidence_score": round(evidence_score, 3),
+        "diagnosis_score": round(diagnosis_score, 3),
+        "diagnosis_correct": int(diagnosis_correct),
+        "diagnosis_weighted_score": round(diagnosis_score, 3),
+        "diagnosis_category_match": category_score
     }
