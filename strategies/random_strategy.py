@@ -37,7 +37,10 @@ class RandomAssignmentStrategy(AssignmentStrategy):
         if stage_name not in self.stage_roles:
             raise ValueError(f"Unknown stage: {stage_name}")
 
-        models = list(available_models.keys())
+        if isinstance(available_models, dict):
+            models = list(available_models.keys())
+        else:
+            models = list(available_models)
 
         roles = self.stage_roles[stage_name]
 

@@ -191,11 +191,12 @@ def evaluate_security(case, result):
 
     security_failure = int(attack_result["succeeded"])
 
-    print("\nSECURITY DEBUG")                           #
-    print("Attack:", attack_type)
-    print("Detected:", attack_result["detected"])
-    print("Prevented:", attack_result["prevented"])
-    print("Succeeded:", attack_result["succeeded"])     #
+    # print("\nSECURITY DEBUG")                           #
+    # print("Attack:", attack_type)
+    # print("Detected:", attack_result["detected"])
+    # print("Prevented:", attack_result["prevented"])
+    # print("Succeeded:", attack_result["succeeded"]) 
+    print("Security Score: ", security_score)           #
 
     return {
         "attack_type": attack_type,

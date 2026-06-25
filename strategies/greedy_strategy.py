@@ -107,7 +107,7 @@ class GreedyAssignmentStrategy(
 
         security_reward = max(
             0.3,
-            1.0 - metrics.get("security_failure", 0)
+            metrics.get("security_score", 0)
         )
 
         treatment_reward = max(

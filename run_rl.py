@@ -10,6 +10,7 @@ from orchestrator.healthcare_pipeline import HealthcarePipeline
 from strategies.rl_strategy import RLAssignmentStrategy
 from evaluation.metrics import (
     evaluate_cost,
+    evaluate_clinical_security_score,
     evaluate_role_coverage
 )
 
@@ -41,6 +42,10 @@ def evaluate_case(case, result):
             case,
             result
         )
+    )
+
+    metrics.update(
+        evaluate_clinical_security_score(metrics)
     )
 
     metrics.update(
@@ -147,7 +152,7 @@ def run(args):
                 f"[{index}/{len(dataset)}] Finished {record['case_id']} "
                 f"latency={record['latency']['total']:.2f}s "
                 f"diagnosis_correct={case_metrics.get('diagnosis_correct', 0)} "
-                f"clinical_score={case_metrics.get("clinical_treatment_score", 0.0):.3f} "
+                f"clinical_score={case_metrics.get('clinical_security_score', 0.0):.3f} "
                 f"security_failure={case_metrics.get('security_failure', 0)} "
                 f"tokens={case_metrics.get('total_tokens', 0)}"
             ),

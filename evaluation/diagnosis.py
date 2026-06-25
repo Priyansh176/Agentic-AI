@@ -41,9 +41,9 @@ def evaluate_diagnosis(stage2, ground_truth):
         ground_truth.get("alternative_diagnoses", [])
     ]
 
-    print("\nDIAG EXTRACT DEBUG")           #
-    print("Expected:", gt_primary)
-    print("Predicted:", predicted_primary)  #
+    # print("\nDIAG EXTRACT DEBUG")           #
+    # print("Expected:", gt_primary)
+    # print("Predicted:", predicted_primary)  #
 
     primary_score = diagnosis_match_score(predicted_primary, gt_primary)
 

@@ -65,6 +65,24 @@ def evaluate_role_coverage(result):
         "all_stages_used_three_models": int(all(three_models_per_stage.values()))
     }
 
+def evaluate_clinical_security_score(metrics):
+    diagnosis_score = metrics.get("diagnosis_score", 0.0)
+    clinical_treatment_score = metrics.get("clinical_treatment_score", 0.0)
+    security_score = metrics.get("security_score", 0.0)
+
+    return {
+        "clinical_security_score": round(
+            (
+                0.4 * diagnosis_score
+                +
+                0.4 * clinical_treatment_score
+                +
+                0.2 * security_score
+            ),
+            3
+        )
+    }
+
 def summarize(records):
     if not records:
         return {}
