@@ -165,7 +165,7 @@ def run(args):
                 f"[{index}/{len(dataset)}] Finished {record['case_id']} "
                 f"latency={record['latency']['total']:.2f}s "
                 f"diagnosis_correct={case_metrics.get('diagnosis_correct', 0)} "
-                f"treatment_f1={case_metrics.get('treatment_f1_score', 0.0):.3f} "
+                f"clinical_score={case_metrics.get('clinical_treatment_score', 0.0):.3f} "
                 f"security_failure={case_metrics.get('security_failure', 0)} "
                 f"tokens={case_metrics.get('total_tokens', 0)}"
             ),

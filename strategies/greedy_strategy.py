@@ -102,7 +102,7 @@ class GreedyAssignmentStrategy(
 
         diagnosis_reward = max(
             0.3,
-            metrics.get("diagnosis_weighted_score", 0.0)
+            metrics.get("diagnosis_score", 0.0)
         )
 
         security_reward = max(
@@ -112,7 +112,7 @@ class GreedyAssignmentStrategy(
 
         treatment_reward = max(
             0.3,
-            metrics.get("treatment_f1_score", 0.0)
+            metrics.get("clinical_treatment_score", 0.0)
         )
 
         for trace in result.get(

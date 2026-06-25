@@ -1,6 +1,5 @@
 from strategies.base_strategy import AssignmentStrategy
 
-
 STAGE_ROLES = {
 
     "symptom_analysis": [
