@@ -88,7 +88,7 @@ def run(args):
     else:
         dataset = dataset[start:start + args.limit]
 
-    strategy = RLAssignmentStrategy(epsilon=0.2, q_table_path="logs/rl/q_table.json")
+    strategy = RLAssignmentStrategy(q_table_path="logs/rl/q_table.json")
     pipeline = HealthcarePipeline(
         strategy=strategy,
         available_models=AVAILABLE_MODELS

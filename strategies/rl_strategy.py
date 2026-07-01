@@ -50,6 +50,7 @@ class RLAssignmentStrategy(AssignmentStrategy):
         self.min_epsilon = 0.05
         self.alpha = alpha
         self.gamma = gamma
+        self.total_episodes = 0
         self.last_actions = {}
         self.episode = []
         self.previous_stage_output = None
@@ -267,6 +268,7 @@ class RLAssignmentStrategy(AssignmentStrategy):
                 "epsilon": self.epsilon,
                 "alpha": self.alpha,
                 "gamma": self.gamma,
+                "episode_count": self.total_episodes,
                 "metric_version": "v2"
             },
             "q_tables": self.q_tables
@@ -292,8 +294,36 @@ class RLAssignmentStrategy(AssignmentStrategy):
 
         if "q_tables" in data:
             self.q_tables = data["q_tables"]
+
+            metadata = data.get("metadata", {})
+
+            self.epsilon = metadata.get(
+                "epsilon",
+                self.epsilon
+            )
+
+            self.alpha = metadata.get(
+                "alpha",
+                self.alpha
+            )
+
+            self.gamma = metadata.get(
+                "gamma",
+                self.gamma
+            )
+
         else:
             self.q_tables = data
+
+        self.total_episodes = metadata.get(
+            "episode_count",
+            0
+        )
+
+        print(                                          #
+            f"Loaded epsilon={self.epsilon:.4f}, "
+            f"episodes={self.total_episodes}"
+        )                                               #
 
     def update_q_value(
         self,
@@ -419,14 +449,19 @@ class RLAssignmentStrategy(AssignmentStrategy):
             s2["stage"]
         )
 
-        self.save_q_table("logs/rl/q_table.json")
-
-        print(f"Epsilon = {self.epsilon:.4f}")      #
+        print(f"Epsilon = {self.epsilon:.4f}")
 
         self.epsilon = max(
             self.min_epsilon,
             self.epsilon * self.epsilon_decay
         )
+
+        self.total_episodes += 1
+
+        self.save_q_table(
+            "logs/rl/q_table.json"
+        )
+
         self.episode = []
 
     def update_stage_output(
