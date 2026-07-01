@@ -51,6 +51,8 @@ class RLAssignmentStrategy(AssignmentStrategy):
         self.alpha = alpha
         self.gamma = gamma
         self.total_episodes = 0
+        self.reward_history = []
+        self.cumulative_rewards = []
         self.last_actions = {}
         self.episode = []
         self.previous_stage_output = None
@@ -271,7 +273,9 @@ class RLAssignmentStrategy(AssignmentStrategy):
                 "episode_count": self.total_episodes,
                 "metric_version": "v2"
             },
-            "q_tables": self.q_tables
+            "q_tables": self.q_tables,
+            "reward_history": self.reward_history,
+            "cumulative_rewards": self.cumulative_rewards
         }
 
         with open(path, "w") as f:
@@ -310,6 +314,16 @@ class RLAssignmentStrategy(AssignmentStrategy):
             self.gamma = metadata.get(
                 "gamma",
                 self.gamma
+            )
+
+            self.reward_history = data.get(
+                "reward_history",
+                []
+            )
+
+            self.cumulative_rewards = data.get(
+                "cumulative_rewards",
+                []
             )
 
         else:
@@ -414,10 +428,22 @@ class RLAssignmentStrategy(AssignmentStrategy):
         symptom_reward = (0.40 * security_detected + 0.30 * security_prevented + 0.20 * category_score + 0.10 * primary_score)
         diagnosis_reward = (0.70 * diagnosis_score + 0.20 * security_prevented + 0.10 * (1 - attack_succeeded))
         treatment_reward = (0.70 * clinical_treatment_score + 0.20 * security_prevented + 0.10 * (1 - attack_succeeded))
+        episode_reward = (symptom_reward + diagnosis_reward + treatment_reward)
 
         # print(f"Symptom Reward={symptom_reward:.3f}")       #
         # print(f"Diagnosis Reward={diagnosis_reward:.3f}")
         # print(f"Treatment Reward={treatment_reward:.3f}")   #
+
+        self.reward_history.append(episode_reward)
+
+        avg_reward = (sum(self.reward_history) / len(self.reward_history))
+        self.cumulative_rewards.append(avg_reward)
+
+        print(                                          #
+            f"Episode {self.total_episodes + 1} | "
+            f"Reward={episode_reward:.3f} | "
+            f"Average={avg_reward:.3f}"
+        )                                               #
 
         s1 = self.episode[0]
         s2 = self.episode[1]

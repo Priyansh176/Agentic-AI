@@ -159,9 +159,9 @@ def run(args):
             flush=True
         )
 
-    strategy.save_q_table(
-        "logs/rl/q_table.json"
-    )
+    strategy.save_q_table("logs/rl/q_table.json")
+    with open("logs/rl/reward_curve.json", "w") as f:
+        json.dump(strategy.cumulative_rewards, f,indent=2)
     print("\nRL assignment experiment complete.")
     print(f"Results: {output_jsonl}")
 
