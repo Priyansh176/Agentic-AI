@@ -206,3 +206,8 @@ if __name__ == "__main__":
 
 
 # python run_rl.py --start 0 --limit 10 --batch-name test --output-dir logs/rl
+
+
+# nohup python run_rl.py --start 500 --limit 500 --batch-name batch2 --output-dir logs/rl > training.log 2>&1 &
+# ps -ef | grep python
+# tail -f training.log
