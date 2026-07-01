@@ -421,7 +421,7 @@ class RLAssignmentStrategy(AssignmentStrategy):
 
         self.save_q_table("logs/rl/q_table.json")
 
-        #print(f"Epsilon = {self.epsilon:.4f}")      #
+        print(f"Epsilon = {self.epsilon:.4f}")      #
 
         self.epsilon = max(
             self.min_epsilon,
