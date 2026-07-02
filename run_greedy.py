@@ -88,7 +88,7 @@ def run(args):
     else:
         dataset = dataset[start:start + args.limit]
 
-    strategy = GreedyAssignmentStrategy(AVAILABLE_MODELS)
+    strategy = GreedyAssignmentStrategy(AVAILABLE_MODELS, profile_path="logs/greedy/model_profiles.json")
     pipeline = HealthcarePipeline(
         strategy=strategy,
         available_models=AVAILABLE_MODELS

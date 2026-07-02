@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 from strategies.base_strategy import AssignmentStrategy
 
 STAGE_ROLES = {
@@ -28,8 +30,11 @@ class GreedyAssignmentStrategy(
 
     def __init__(
         self,
-        available_models
+        available_models,
+        profile_path=None
     ):
+
+        self.profile_path = profile_path
 
         self.model_profiles = {
 
@@ -52,6 +57,9 @@ class GreedyAssignmentStrategy(
 
             for model in available_models
         }
+
+        if self.profile_path:
+            self.load_profiles(self.profile_path)
 
     def _role_score(
         self,
@@ -93,6 +101,38 @@ class GreedyAssignmentStrategy(
             unused_models.remove(best_model)
 
         return assignment
+
+    def save_profiles(
+        self,
+        path
+    ):
+
+        Path(path).parent.mkdir(
+            parents=True,
+            exist_ok=True
+        )
+
+        with open(path, "w") as f:
+            json.dump(
+                self.model_profiles,
+                f,
+                indent=2
+            )
+
+    def load_profiles(
+        self,
+        path
+    ):
+
+        if not Path(path).exists():
+            return
+
+        with open(path, "r") as f:
+            self.model_profiles = json.load(f)
+
+        print(
+            "Loaded existing greedy model profiles."
+        )
 
     def update_profiles(
         self,
@@ -154,3 +194,6 @@ class GreedyAssignmentStrategy(
             profile[role] = (old_score * 0.8 + reward * 0.2)
 
             profile["assignments"] += 1
+
+            if (self.profile_path and profile["assignments"] % 20 == 0):
+                self.save_profiles(self.profile_path)
