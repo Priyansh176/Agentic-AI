@@ -1,0 +1,35 @@
+{
+  "llama3.1:8b": {
+    "Interpreter": 0.40304,
+    "Evidence Collector": 0.5119857129669875,
+    "Validator": 0.5549793693300507,
+    "Diagnosis Leader": 0.6218635450368892,
+    "Alternative Generator": 0.44995450265600007,
+    "Reviewer": 0.46,
+    "Planner": 0.3231592896786651,
+    "Risk Assessor": 0.6909515862840918,
+    "assignments": 300
+  },
+  "mistral:latest": {
+    "Interpreter": 0.5119857712702333,
+    "Evidence Collector": 0.4173939200000001,
+    "Validator": 0.5845425887189253,
+    "Diagnosis Leader": 0.45475200000000005,
+    "Alternative Generator": 0.62208128,
+    "Reviewer": 0.45933552587692233,
+    "Planner": 0.4021115646717577,
+    "Risk Assessor": 0.42800000000000005,
+    "assignments": 300
+  },
+  "gemma3:4b": {
+    "Interpreter": 0.4140122624000001,
+    "Evidence Collector": 0.40154505135026164,
+    "Validator": 0.7020488414872008,
+    "Diagnosis Leader": 0.45250391040000004,
+    "Alternative Generator": 0.45933552562527197,
+    "Reviewer": 0.62036161536,
+    "Planner": 0.32206472339456005,
+    "Risk Assessor": 0.47125148808614437,
+    "assignments": 300
+  }
+}
