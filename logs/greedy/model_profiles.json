@@ -1,35 +1,35 @@
 {
   "llama3.1:8b": {
-    "Interpreter": 0.40304,
-    "Evidence Collector": 0.5119857129669875,
-    "Validator": 0.5549793693300507,
-    "Diagnosis Leader": 0.6218635450368892,
-    "Alternative Generator": 0.44995450265600007,
-    "Reviewer": 0.46,
-    "Planner": 0.3231592896786651,
-    "Risk Assessor": 0.6909515862840918,
-    "assignments": 300
+    "Interpreter": 0.38553200000000004,
+    "Evidence Collector": 0.5396130869538039,
+    "Validator": 0.7981814930989197,
+    "Diagnosis Leader": 0.44047466379149375,
+    "Alternative Generator": 0.7189093997131926,
+    "Reviewer": 0.4425077253232601,
+    "Planner": 0.31124533700276436,
+    "Risk Assessor": 0.4696170200732764,
+    "assignments": 1500
   },
   "mistral:latest": {
-    "Interpreter": 0.5119857712702333,
-    "Evidence Collector": 0.4173939200000001,
-    "Validator": 0.5845425887189253,
-    "Diagnosis Leader": 0.45475200000000005,
-    "Alternative Generator": 0.62208128,
-    "Reviewer": 0.45933552587692233,
-    "Planner": 0.4021115646717577,
+    "Interpreter": 0.40074343252410655,
+    "Evidence Collector": 0.38446871055162307,
+    "Validator": 0.7987689716742961,
+    "Diagnosis Leader": 0.44250772321495746,
+    "Alternative Generator": 0.44047466379149375,
+    "Reviewer": 0.7189109584030295,
+    "Planner": 0.3602559018371961,
     "Risk Assessor": 0.42800000000000005,
-    "assignments": 300
+    "assignments": 1500
   },
   "gemma3:4b": {
-    "Interpreter": 0.4140122624000001,
+    "Interpreter": 0.5396154261172093,
     "Evidence Collector": 0.40154505135026164,
-    "Validator": 0.7020488414872008,
-    "Diagnosis Leader": 0.45250391040000004,
-    "Alternative Generator": 0.45933552562527197,
-    "Reviewer": 0.62036161536,
-    "Planner": 0.32206472339456005,
-    "Risk Assessor": 0.47125148808614437,
-    "assignments": 300
+    "Validator": 0.5098689335511679,
+    "Diagnosis Leader": 0.7189098233062108,
+    "Alternative Generator": 0.44250772505631786,
+    "Reviewer": 0.44047466379149375,
+    "Planner": 0.31346966931437303,
+    "Risk Assessor": 0.7981814894115054,
+    "assignments": 1500
   }
 }
