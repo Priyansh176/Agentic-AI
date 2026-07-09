@@ -1,35 +1,35 @@
 {
   "llama3.1:8b": {
     "Interpreter": 0.38553200000000004,
-    "Evidence Collector": 0.5396130869538039,
-    "Validator": 0.7981814930989197,
-    "Diagnosis Leader": 0.44047466379149375,
-    "Alternative Generator": 0.7189093997131926,
-    "Reviewer": 0.4425077253232601,
+    "Evidence Collector": 0.4404729563331913,
+    "Validator": 0.8667828206143902,
+    "Diagnosis Leader": 0.5836002671569862,
+    "Alternative Generator": 0.422015499695298,
+    "Reviewer": 0.4140061802586081,
     "Planner": 0.31124533700276436,
-    "Risk Assessor": 0.4696170200732764,
-    "assignments": 1500
+    "Risk Assessor": 0.4356936160586211,
+    "assignments": 2380
   },
   "mistral:latest": {
-    "Interpreter": 0.40074343252410655,
+    "Interpreter": 0.3805947460192853,
     "Evidence Collector": 0.38446871055162307,
-    "Validator": 0.7987689716742961,
-    "Diagnosis Leader": 0.44250772321495746,
-    "Alternative Generator": 0.44047466379149375,
-    "Reviewer": 0.7189109584030295,
-    "Planner": 0.3602559018371961,
+    "Validator": 0.753425590485536,
+    "Diagnosis Leader": 0.414006178571966,
+    "Alternative Generator": 0.5836002671569862,
+    "Reviewer": 0.42201551407167415,
+    "Planner": 0.36758214094011393,
     "Risk Assessor": 0.42800000000000005,
-    "assignments": 1500
+    "assignments": 2380
   },
   "gemma3:4b": {
-    "Interpreter": 0.5396154261172093,
-    "Evidence Collector": 0.40154505135026164,
+    "Interpreter": 0.4404729563331913,
+    "Evidence Collector": 0.3812360410802093,
     "Validator": 0.5098689335511679,
-    "Diagnosis Leader": 0.7189098233062108,
-    "Alternative Generator": 0.44250772505631786,
-    "Reviewer": 0.44047466379149375,
-    "Planner": 0.31346966931437303,
-    "Risk Assessor": 0.7981814894115054,
-    "assignments": 1500
+    "Diagnosis Leader": 0.422015503602254,
+    "Alternative Generator": 0.4140061800450543,
+    "Reviewer": 0.5836002671569862,
+    "Planner": 0.31077573545149845,
+    "Risk Assessor": 0.8667828206143902,
+    "assignments": 2380
   }
 }
