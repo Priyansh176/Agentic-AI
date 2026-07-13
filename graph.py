@@ -1,7 +1,6 @@
 import json
 import matplotlib.pyplot as plt
 
-# Load reward history
 with open("logs/rl/reward_curve.json", "r") as f:
     rewards = json.load(f)
 
@@ -16,11 +15,12 @@ plt.plot(
     label="Average Cumulative Reward"
 )
 
-plt.xlabel("Training Episode")
-plt.ylabel("Average Cumulative Reward")
-plt.title("RL Training Performance")
+plt.xlabel("Training Episode", fontsize=15, fontweight="bold")
+plt.ylabel("Average Cumulative Reward", fontsize=15, fontweight="bold")
+plt.title("RL Training Performance", fontsize=18, fontweight="bold", pad=15)
+plt.xticks(fontsize=13)
+plt.yticks(fontsize=13)
 plt.grid(True, linestyle="--", alpha=0.5)
-plt.legend()
 
 plt.tight_layout()
 
