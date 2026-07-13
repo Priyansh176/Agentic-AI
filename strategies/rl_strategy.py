@@ -42,7 +42,8 @@ class RLAssignmentStrategy(AssignmentStrategy):
         epsilon=0.2,
         alpha=0.1,
         gamma=0.9,
-        q_table_path=None
+        q_table_path=None,
+        training = True
     ):
 
         self.epsilon = epsilon
@@ -50,6 +51,7 @@ class RLAssignmentStrategy(AssignmentStrategy):
         self.min_epsilon = 0.05
         self.alpha = alpha
         self.gamma = gamma
+        self.training = training
         self.total_episodes = 0
         self.reward_history = []
         self.cumulative_rewards = []
@@ -178,11 +180,12 @@ class RLAssignmentStrategy(AssignmentStrategy):
         state_key = str(state)
         q_values = self.q_tables[stage_name][state_key]
 
-        if random.random() < self.epsilon:
-            return random.randint(
-                0,
-                len(self.ROLE_PERMUTATIONS) - 1
-            )
+        if self.training:
+            if random.random() < self.epsilon:
+                return random.randint(
+                    0,
+                    len(self.ROLE_PERMUTATIONS) - 1
+                )
 
         best_value = max(
             q_values.values()
@@ -333,6 +336,8 @@ class RLAssignmentStrategy(AssignmentStrategy):
             "episode_count",
             0
         )
+        if not self.training:
+            self.epsilon = 0.0
 
         print(                                          #
             f"Loaded epsilon={self.epsilon:.4f}, "
@@ -384,6 +389,8 @@ class RLAssignmentStrategy(AssignmentStrategy):
         self,
         metrics
     ):
+        if not self.training:
+            return
 
         diagnosis_score = metrics.get(
             "diagnosis_score",

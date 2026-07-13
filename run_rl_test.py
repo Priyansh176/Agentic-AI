@@ -88,7 +88,7 @@ def run(args):
     else:
         dataset = dataset[start:start + args.limit]
 
-    strategy = RLAssignmentStrategy(q_table_path="logs/rl/q_table.json")
+    strategy = RLAssignmentStrategy(q_table_path="logs/rl/q_table.json",training=False)
     pipeline = HealthcarePipeline(
         strategy=strategy,
         available_models=AVAILABLE_MODELS
@@ -111,8 +111,6 @@ def run(args):
                 case,
                 result
             )
-            if "case_failed" not in metrics:
-                strategy.learn_episode(metrics)
             record = {
                 "case_id": case["case_id"],
                 "stage1": result["stage1"],
@@ -159,9 +157,6 @@ def run(args):
             flush=True
         )
 
-    strategy.save_q_table("logs/rl/q_table.json")
-    with open("logs/rl/reward_curve.json", "w") as f:
-        json.dump(strategy.cumulative_rewards, f,indent=2)
     print("\nRL assignment experiment complete.")
     print(f"Results: {output_jsonl}")
 
@@ -176,7 +171,7 @@ def parse_args():
     )
     parser.add_argument(
         "--output-dir",
-        default="logs/rl"
+        default="logs/rl_test"
     )
     parser.add_argument(
         "--limit",
