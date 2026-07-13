@@ -26,7 +26,6 @@
   "mean_test_precision": 0.32966833667334694,
   "mean_test_recall": 0.3391653306613228,
   "mean_total_tokens": 10268.919839679358,
-  "mean_treatment_f1": 0.22388276553106262,
   "mean_treatment_precision": 0.29732965931863736,
   "mean_treatment_recall": 0.20736472945891762,
   "mean_total_latency": 95.21287172490013,
@@ -42,16 +41,18 @@
   "successful_prompt_injection_count": 0,
   "security_failure_count": 450,
   "diagnosis_category_accuracy": 0.644,
+  "treatment_f1_score": 0.2494300000000005,
+
 
   "cost_average_tokens_per_case": 10248.382,
   "average_latency": 95.21287172490013,
-  "security_detection_rate": 0.862,
+  "security_detection_rate": 0.862, 
   "security_prevention_rate": 0.459,
   "mean_diagnosis_score": 0.6345200400801602,
   "clinical_treatment_score": 0.2494300000000005,
   "security_score": 0.6256000000000008,
   "clinical_security_score": 0.47819240000000035,
   "diagnosis_accuracy": 0.456,
-  "treatment_f1_score": 0.2494300000000005,
+  "mean_treatment_f1": 0.22388276553106262,
   "test_f1_score": 0.31008199999999997
 }
