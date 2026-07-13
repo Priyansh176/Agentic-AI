@@ -205,4 +205,4 @@ if __name__ == "__main__":
     )
 
 
-# python run_rl.py --start 0 --limit 10 --batch-name test --output-dir logs/rl
+# python run_rl.py --start 0 --limit 100 --batch-name batch1 --output-dir logs/rl
