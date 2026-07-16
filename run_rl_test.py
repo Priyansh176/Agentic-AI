@@ -7,7 +7,7 @@ from evaluation.diagnosis import evaluate_diagnosis
 from evaluation.security import evaluate_security
 from evaluation.treatment import evaluate_treatment
 from orchestrator.healthcare_pipeline import HealthcarePipeline
-from strategies.rl_strategy import RLAssignmentStrategy
+from strategies.rl_test_strategy import RLTestAssignmentStrategy
 from evaluation.metrics import (
     evaluate_cost,
     evaluate_clinical_security_score,
@@ -88,12 +88,12 @@ def run(args):
     else:
         dataset = dataset[start:start + args.limit]
 
-    strategy = RLAssignmentStrategy(q_table_path="logs/rl/q_table.json",training=False)
+    strategy = RLTestAssignmentStrategy(q_table_path="logs/rl/q_table.json")
     pipeline = HealthcarePipeline(
         strategy=strategy,
         available_models=AVAILABLE_MODELS
     )
-
+    test_rewards = []
     for index, case in enumerate(dataset, start=1):
         print(
             (
@@ -110,6 +110,69 @@ def run(args):
             metrics = evaluate_case(
                 case,
                 result
+            )
+            diagnosis_score = metrics.get(
+                "diagnosis_score",
+                0.0
+            )
+
+            primary_score = metrics.get(
+                "primary_score",
+                0.0
+            )
+
+            category_score = metrics.get(
+                "category_score",
+                0.0
+            )
+
+            clinical = metrics.get(
+                "clinical_treatment_score",
+                0.0
+            )
+
+            security_detected = metrics.get(
+                "security_detected",
+                0
+            )
+
+            security_prevented = metrics.get(
+                "security_prevented",
+                0
+            )
+
+            attack_success = metrics.get(
+                "attack_succeeded",
+                0
+            )
+
+            symptom_reward = (
+                0.40*security_detected +
+                0.30*security_prevented +
+                0.20*category_score +
+                0.10*primary_score
+            )
+
+            diagnosis_reward = (
+                0.70*diagnosis_score +
+                0.20*security_prevented +
+                0.10*(1-attack_success)
+            )
+
+            treatment_reward = (
+                0.70*clinical +
+                0.20*security_prevented +
+                0.10*(1-attack_success)
+            )
+
+            episode_reward = (
+                symptom_reward +
+                diagnosis_reward +
+                treatment_reward
+            )
+
+            test_rewards.append(
+                episode_reward
             )
             record = {
                 "case_id": case["case_id"],
@@ -157,6 +220,38 @@ def run(args):
             flush=True
         )
 
+    running = 0
+
+    average_rewards = []
+
+    for i, reward in enumerate(
+        test_rewards,
+        start=1
+    ):
+
+        running += reward
+
+        average_rewards.append(
+            running/i
+        )
+
+    with open(
+
+        os.path.join(
+            args.output_dir,
+            "reward_curve.json"
+        ),
+
+        "w"
+
+    ) as f:
+
+        json.dump(
+            average_rewards,
+            f,
+            indent=2
+        )
+
     print("\nRL assignment experiment complete.")
     print(f"Results: {output_jsonl}")
 
@@ -200,4 +295,4 @@ if __name__ == "__main__":
     )
 
 
-# python run_rl.py --start 0 --limit 100 --batch-name batch1 --output-dir logs/rl_test
+# python run_rl_test.py --start 0 --limit 100 --batch-name batch1 --output-dir logs/rl_test
