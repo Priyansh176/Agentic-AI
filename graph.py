@@ -17,7 +17,7 @@ plt.plot(
 
 plt.xlabel("Training Episode", fontsize=15, fontweight="bold")
 plt.ylabel("Average Cumulative Reward", fontsize=15, fontweight="bold")
-plt.title("RL Training Performance", fontsize=18, fontweight="bold", pad=15)
+plt.title("SARA Training Performance", fontsize=18, fontweight="bold", pad=15)
 plt.xticks(fontsize=13)
 plt.yticks(fontsize=13)
 plt.grid(True, linestyle="--", alpha=0.5)
